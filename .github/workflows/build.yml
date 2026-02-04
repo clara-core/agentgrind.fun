@@ -14,10 +14,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust (pinned)
-        uses: dtolnay/rust-toolchain@master
+      - name: Install Rust (nightly, for edition2024 deps)
+        uses: dtolnay/rust-toolchain@nightly
         with:
-          toolchain: 1.93.0
+          toolchain: nightly
 
       - name: Install Solana CLI
         run: |
@@ -26,7 +26,7 @@ jobs:
 
       - name: Install Anchor CLI
         run: |
-          cargo install --git https://github.com/coral-xyz/anchor avm --locked --force
+          cargo +nightly install --git https://github.com/coral-xyz/anchor avm --locked --force
           avm install latest
           avm use latest
 
@@ -41,8 +41,11 @@ jobs:
 
       - name: Rust versions
         run: |
+          which rustc
+          which cargo
           rustc -V
           cargo -V
+          cargo +nightly -V
 
       - name: Build Anchor Program
         run: anchor build
