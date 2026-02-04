@@ -23,3 +23,8 @@ anchor-spl = "0.32.1"
 [dev-dependencies]
 solana-program-test = "2.1.1"
 solana-sdk = "2.1.1"
+
+# CI workaround: GitHub runners' SBF toolchain (via Solana platform-tools) can lag Cargo features.
+# blake3 1.8.x requires the unstable `edition2024` cargo feature in older toolchains.
+[patch.crates-io]
+blake3 = "=1.5.5"
