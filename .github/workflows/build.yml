@@ -24,6 +24,20 @@ jobs:
           curl -sSfL https://release.anza.xyz/stable/install | sh
           echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
 
+      - name: Install newer platform-tools (workaround for blake3 edition2024)
+        run: |
+          # Solana's bundled SBF platform-tools can lag Cargo feature support.
+          # Override with anza-xyz/platform-tools which includes a newer cargo/rust.
+          SDK_BASE="/home/runner/.local/share/solana/install/active_release/bin/platform-tools-sdk/sbf"
+          DEPS_DIR="$SDK_BASE/dependencies"
+          mkdir -p "$DEPS_DIR"
+          curl -sSL "https://github.com/anza-xyz/platform-tools/releases/download/v1.53/platform-tools-linux-x86_64.tar.bz2" \
+            -o /tmp/platform-tools-linux-x86_64.tar.bz2
+          rm -rf "$DEPS_DIR/platform-tools"
+          mkdir -p "$DEPS_DIR/platform-tools"
+          tar -jxf /tmp/platform-tools-linux-x86_64.tar.bz2 -C "$DEPS_DIR/platform-tools" --strip-components 1
+          "$DEPS_DIR/platform-tools/rust/bin/cargo" -V
+
       - name: Install Anchor CLI
         run: |
           cargo +nightly install --git https://github.com/coral-xyz/anchor avm --locked --force
