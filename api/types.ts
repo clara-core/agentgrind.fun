@@ -49,6 +49,32 @@ export interface CancelBountyRequest {
   bountyId: string;
 }
 
+export interface RejectBountyRequest {
+  bountyId: string;
+  reason: string;
+}
+
+export interface FinalizeBountyRequest {
+  bountyId: string;
+}
+
+export interface LinkXRequest {
+  xHandle: string;
+  signature: string;   // wallet signature of "Link X:@<handle> to AgentGrind"
+}
+
+export interface CreatorProfile {
+  wallet: string;
+  reputation: number;
+  totalCreated: number;
+  totalCompleted: number;
+  totalRejected: number;
+  totalAutoFinalized: number;
+  totalCancelled: number;
+  xHandle: string;
+  xVerified: boolean;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;

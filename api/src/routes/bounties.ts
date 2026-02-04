@@ -6,8 +6,12 @@ import {
   SubmitProofRequest, 
   ApproveBountyRequest,
   CancelBountyRequest,
+  RejectBountyRequest,
+  FinalizeBountyRequest,
+  LinkXRequest,
   ApiResponse,
-  Bounty
+  Bounty,
+  CreatorProfile
 } from '../../types';
 
 export const bountyRouter = Router();
@@ -156,6 +160,103 @@ bountyRouter.post('/cancel', async (req: Request, res: Response) => {
       success: true,
       data: {
         transaction: 'base64_tx_placeholder',
+      },
+    } as ApiResponse<any>);
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    } as ApiResponse<never>);
+  }
+});
+
+// POST /api/bounties/reject - Creator rejects submitted proof
+bountyRouter.post('/reject', async (req: Request, res: Response) => {
+  try {
+    const body: RejectBountyRequest = req.body;
+    
+    // TODO: Build reject transaction (reopens bounty, -15 rep)
+    
+    res.json({
+      success: true,
+      data: {
+        transaction: 'base64_tx_placeholder',
+      },
+    } as ApiResponse<any>);
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    } as ApiResponse<never>);
+  }
+});
+
+// POST /api/bounties/finalize - Auto-pay agent after 48h review window
+bountyRouter.post('/finalize', async (req: Request, res: Response) => {
+  try {
+    const body: FinalizeBountyRequest = req.body;
+    
+    // TODO: Build finalize transaction (pays agent, -30 rep to creator)
+    
+    res.json({
+      success: true,
+      data: {
+        transaction: 'base64_tx_placeholder',
+      },
+    } as ApiResponse<any>);
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    } as ApiResponse<never>);
+  }
+});
+
+// GET /api/bounties/profile/:wallet - Get creator profile
+bountyRouter.get('/profile/:wallet', async (req: Request, res: Response) => {
+  try {
+    const { wallet } = req.params;
+    
+    // TODO: Fetch CreatorProfile from on-chain
+    const profile: CreatorProfile = {
+      wallet,
+      reputation: 100,
+      totalCreated: 0,
+      totalCompleted: 0,
+      totalRejected: 0,
+      totalAutoFinalized: 0,
+      totalCancelled: 0,
+      xHandle: '',
+      xVerified: false,
+    };
+    
+    res.json({
+      success: true,
+      data: profile,
+    } as ApiResponse<CreatorProfile>);
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    } as ApiResponse<never>);
+  }
+});
+
+// POST /api/bounties/link-x - Link verified X handle
+bountyRouter.post('/link-x', async (req: Request, res: Response) => {
+  try {
+    const body: LinkXRequest = req.body;
+    
+    // TODO:
+    // 1. Verify wallet signature of "Link X:@<handle> to AgentGrind"
+    // 2. Call X API to verify handle exists
+    // 3. If valid, build + return link_x on-chain transaction
+    
+    res.json({
+      success: true,
+      data: {
+        transaction: 'base64_tx_placeholder',
+        xHandle: body.xHandle,
       },
     } as ApiResponse<any>);
   } catch (error: any) {
