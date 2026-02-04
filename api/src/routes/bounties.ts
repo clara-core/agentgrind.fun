@@ -12,14 +12,16 @@ import {
   ApiResponse,
   Bounty,
   CreatorProfile
-} from '../../types';
+} from '../types';
 
 export const bountyRouter = Router();
 
 // GET /api/bounties - List all bounties
 bountyRouter.get('/', async (req: Request, res: Response) => {
   try {
-    const { status, limit = '50', offset = '0' } = req.query;
+    const status = Array.isArray(req.query.status) ? req.query.status[0] : (req.query.status as string | undefined);
+    const limit = Array.isArray(req.query.limit) ? req.query.limit[0] : (req.query.limit as string | undefined) ?? '50';
+    const offset = Array.isArray(req.query.offset) ? req.query.offset[0] : (req.query.offset as string | undefined) ?? '0';
     
     // TODO: Fetch from on-chain or cached DB
     const bounties: Bounty[] = [];
@@ -215,7 +217,7 @@ bountyRouter.post('/finalize', async (req: Request, res: Response) => {
 // GET /api/bounties/profile/:wallet - Get creator profile
 bountyRouter.get('/profile/:wallet', async (req: Request, res: Response) => {
   try {
-    const { wallet } = req.params;
+    const wallet = String(req.params.wallet);
     
     // TODO: Fetch CreatorProfile from on-chain
     const profile: CreatorProfile = {
