@@ -16,7 +16,6 @@ pub struct SubmitProof<'info> {
 }
 
 pub fn handler(ctx: Context<SubmitProof>, proof_uri: String) -> Result<()> {
-    // Validate proof URI length
     require!(
         proof_uri.len() <= MAX_PROOF_URI_LEN,
         AgentGrindError::ProofUriTooLong
@@ -24,11 +23,11 @@ pub fn handler(ctx: Context<SubmitProof>, proof_uri: String) -> Result<()> {
 
     let bounty = &mut ctx.accounts.bounty;
 
-    // Set proof URI and update status
     bounty.proof_uri = proof_uri.clone();
+    bounty.proof_submitted_at = Clock::get()?.unix_timestamp;
     bounty.status = BountyStatus::Submitted;
 
-    msg!("Proof submitted: {}", proof_uri);
+    msg!("Proof submitted: {} at {}", proof_uri, bounty.proof_submitted_at);
 
     Ok(())
 }

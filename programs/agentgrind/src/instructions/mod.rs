@@ -3,9 +3,15 @@ pub mod claim_bounty;
 pub mod submit_proof;
 pub mod approve_and_pay;
 pub mod cancel_bounty;
+pub mod reject_bounty;
+pub mod finalize_bounty;
+pub mod link_x;
 
 pub use create_bounty::*;
 pub use claim_bounty::*;
 pub use submit_proof::*;
 pub use approve_and_pay::*;
 pub use cancel_bounty::*;
+pub use reject_bounty::*;
+pub use finalize_bounty::*;
+pub use link_x::*;

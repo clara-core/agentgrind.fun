@@ -4,14 +4,15 @@ use anchor_spl::token::{self, Token, TokenAccount, Transfer, CloseAccount};
 use crate::errors::AgentGrindError;
 use crate::state::*;
 
+/// Anyone can call this to auto-pay the agent after the 48h review window
+/// has elapsed on a Submitted bounty (creator ghosted).
 #[derive(Accounts)]
-pub struct ApproveAndPay<'info> {
+pub struct FinalizeBounty<'info> {
     #[account(
         mut,
         constraint = bounty.status == BountyStatus::Submitted @ AgentGrindError::BountyNotSubmitted,
-        constraint = bounty.creator == creator.key() @ AgentGrindError::UnauthorizedCreator,
-        seeds = [b"bounty", creator.key().as_ref(), bounty.bounty_id.as_bytes()],
-        bump = bounty.bump
+        constraint = Clock::get()?.unix_timestamp > bounty.proof_submitted_at + REVIEW_WINDOW_SECS
+            @ AgentGrindError::ReviewWindowActive
     )]
     pub bounty: Account<'info, Bounty>,
 
@@ -22,12 +23,17 @@ pub struct ApproveAndPay<'info> {
     )]
     pub vault: Account<'info, TokenAccount>,
 
+    /// Creator's profile — penalised for ghosting
     #[account(
         mut,
-        seeds = [b"profile", creator.key().as_ref()],
+        seeds = [b"profile", bounty.creator.as_ref()],
         bump
     )]
-    pub profile: Account<'info, CreatorProfile>,
+    pub creator_profile: Account<'info, CreatorProfile>,
+
+    /// Rent recipient (the caller pays nothing, gets nothing — just triggers finalize)
+    #[account(mut)]
+    pub caller: Signer<'info>,
 
     #[account(
         mut,
@@ -36,20 +42,18 @@ pub struct ApproveAndPay<'info> {
     )]
     pub claimer_token_account: Account<'info, TokenAccount>,
 
-    #[account(mut)]
-    pub creator: Signer<'info>,
-
     pub token_program: Program<'info, Token>,
 }
 
-pub fn handler(ctx: Context<ApproveAndPay>) -> Result<()> {
+pub fn handler(ctx: Context<FinalizeBounty>) -> Result<()> {
     let bounty = &mut ctx.accounts.bounty;
 
-    // ── PDA signer seeds ──
+    // ── PDA signer for bounty (needed to sign vault transfer) ──
+    // Bounty PDA seeds: ["bounty", creator, bounty_id]
     let bounty_id = bounty.bounty_id.clone();
     let seeds = &[
         b"bounty".as_ref(),
-        ctx.accounts.creator.key.as_ref(),
+        bounty.creator.as_ref(),
         bounty_id.as_bytes(),
         &[bounty.bump],
     ];
@@ -65,10 +69,10 @@ pub fn handler(ctx: Context<ApproveAndPay>) -> Result<()> {
     let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds);
     token::transfer(cpi_ctx, bounty.amount)?;
 
-    // ── Close vault (reclaim rent to creator) ──
+    // ── Close vault (rent back to caller who triggered finalize) ──
     let close_accounts = CloseAccount {
         account: ctx.accounts.vault.to_account_info(),
-        destination: ctx.accounts.creator.to_account_info(),
+        destination: ctx.accounts.caller.to_account_info(),
         authority: bounty.to_account_info(),
     };
     let close_program = ctx.accounts.token_program.to_account_info();
@@ -78,13 +82,13 @@ pub fn handler(ctx: Context<ApproveAndPay>) -> Result<()> {
     // ── Update bounty ──
     bounty.status = BountyStatus::Completed;
 
-    // ── Reputation: +15 ──
-    let profile = &mut ctx.accounts.profile;
-    profile.apply_rep(REP_COMPLETE);
-    profile.total_completed += 1;
+    // ── Reputation: -30 (ghost penalty) ──
+    let profile = &mut ctx.accounts.creator_profile;
+    profile.apply_rep(REP_GHOST);
+    profile.total_auto_finalized += 1;
 
     msg!(
-        "Bounty approved and paid: {} USDC to {}. Rep now: {}",
+        "Bounty auto-finalized (creator ghosted). {} USDC paid to {}. Creator rep now: {}",
         bounty.amount,
         bounty.claimer.unwrap(),
         profile.reputation

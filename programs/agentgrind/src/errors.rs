@@ -40,4 +40,25 @@ pub enum AgentGrindError {
     
     #[msg("Invalid mint address")]
     InvalidMint,
+
+    #[msg("Review window has not elapsed yet")]
+    ReviewWindowActive,
+
+    #[msg("Rejection reason exceeds maximum length")]
+    RejectionReasonTooLong,
+
+    #[msg("Creator reputation is too low to create bounties")]
+    ReputationTooLow,
+
+    #[msg("Bounty amount exceeds your reputation tier limit")]
+    AmountExceedsRepLimit,
+
+    #[msg("X handle exceeds maximum length")]
+    XHandleTooLong,
+
+    #[msg("X handle is already verified")]
+    XAlreadyVerified,
+
+    #[msg("Bounty is not in Rejected status")]
+    BountyNotRejected,
 }
