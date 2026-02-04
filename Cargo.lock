@@ -8926,3 +8926,8 @@ dependencies = [
  "cc",
  "pkg-config",
 ]
+
+[[patch.unused]]
+name = "blake3"
+version = "1.5.5"
+source = "git+https://github.com/BLAKE3-team/BLAKE3?tag=1.5.5#81f772a4cd70dc0325047a6a737d2f6f4b92180e"

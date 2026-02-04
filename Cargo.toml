@@ -16,4 +16,5 @@ codegen-units = 1
 # CI/workflow compatibility: Solana SBF toolchain on GitHub runners can lag cargo feature support.
 # blake3 1.8.x requires unstable cargo feature `edition2024` in older toolchains, so pin it.
 [patch.crates-io]
-blake3 = "=1.5.5"
+# Use a git source so Cargo treats it as a true patch (patching to a different *version* from crates.io isn't allowed).
+blake3 = { git = "https://github.com/BLAKE3-team/BLAKE3", tag = "1.5.5" }
