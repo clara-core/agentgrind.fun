@@ -6,7 +6,7 @@ pub mod errors;
 
 use instructions::*;
 
-declare_id!("8tCF5KGdXXNtsA1FGfoJ7VJ7Mn7YCA5UEEPoRuTu9y8i");
+declare_id!("HMUV19dpEUPxjSYdqnp4usgcsjHp6WrZ5ijutmKXcTDz");
 
 #[program]
 pub mod agentgrind {
