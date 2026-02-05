@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server';
 import { ensureSchema, sql } from '../../_db';
 
 export async function POST(req: Request) {
-  await ensureSchema();
-  const body = await req.json();
+  try {
+    await ensureSchema();
+    const body = await req.json();
   const keys = Array.isArray(body.keys) ? body.keys : [];
 
   // keys: [{creator,bounty_id}]
@@ -33,6 +34,12 @@ export async function POST(req: Request) {
     limit 500;
   `;
 
-  const filtered = rows.filter((r: any) => wanted.has(`${r.creator}:${r.bounty_id}`));
-  return NextResponse.json({ ok: true, items: filtered });
+    const filtered = rows.filter((r: any) => wanted.has(`${r.creator}:${r.bounty_id}`));
+    return NextResponse.json({ ok: true, items: filtered });
+  } catch (e: any) {
+    return NextResponse.json(
+      { ok: false, error: 'db_error', message: e?.message || String(e), items: [] },
+      { status: 500 }
+    );
+  }
 }

@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server';
 import { ensureSchema, sql } from '../_db';
 
 export async function POST(req: Request) {
-  await ensureSchema();
-  const body = await req.json();
+  try {
+    await ensureSchema();
+    const body = await req.json();
 
   const creator = String(body.creator || '');
   const bounty_id = String(body.bounty_id || '');
@@ -14,12 +15,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'missing_fields' }, { status: 400 });
   }
 
-  await sql`
-    insert into bounty_metadata (creator, bounty_id, title, description)
-    values (${creator}, ${bounty_id}, ${title}, ${description})
-    on conflict (creator, bounty_id)
-    do update set title = excluded.title, description = excluded.description;
-  `;
+    await sql`
+      insert into bounty_metadata (creator, bounty_id, title, description)
+      values (${creator}, ${bounty_id}, ${title}, ${description})
+      on conflict (creator, bounty_id)
+      do update set title = excluded.title, description = excluded.description;
+    `;
 
-  return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true });
+  } catch (e: any) {
+    return NextResponse.json(
+      { ok: false, error: 'db_error', message: e?.message || String(e) },
+      { status: 500 }
+    );
+  }
 }

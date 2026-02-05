@@ -143,7 +143,7 @@ export default function CreateBounty() {
       await connection.confirmTransaction({ signature: txSig, blockhash, lastValidBlockHeight }, 'confirmed');
 
       // store off-chain metadata
-      await fetch('/api/metadata', {
+      const metaRes = await fetch('/api/metadata', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
@@ -152,7 +152,16 @@ export default function CreateBounty() {
           title: title.trim(),
           description: description.trim(),
         }),
-      });
+      }).catch(() => null);
+
+      if (!metaRes || !metaRes.ok) {
+        const detail = metaRes ? await metaRes.text().catch(() => '') : '';
+        // tx succeeded, so we treat this as warning
+        setError(
+          'Bounty created on-chain, but metadata save failed. (Vercel Postgres not configured?) ' +
+            (detail ? `Details: ${detail}` : '')
+        );
+      }
 
       setSig(txSig);
     } catch (err: any) {
