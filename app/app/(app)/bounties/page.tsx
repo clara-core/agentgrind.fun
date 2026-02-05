@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useConnection } from '@solana/wallet-adapter-react';
+import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { BOUNTY_ACCOUNT_SIZE, decodeBounty, type Bounty } from '../lib/agentgrind';
 import { PublicKey } from '@solana/web3.js';
+import * as anchor from '@coral-xyz/anchor';
+import idl from '../idl/agentgrind.json';
 import { AGENTGRIND_PROGRAM_ID } from '../lib/agentgrind';
 
 const statusBadge = (status: string) => {
@@ -27,13 +29,15 @@ const formatDeadline = (ts: number) => {
 
 const short = (s: string, n = 4) => `${s.slice(0, n)}…${s.slice(-n)}`;
 
-function BountyCard({ bounty }: { bounty: Bounty & { title?: string; description?: string } }) {
+function BountyCard({ bounty, onClaim }: { bounty: (Bounty & { address: string; title?: string; description?: string }); onClaim: (address: string) => Promise<void> }) {
   return (
     <div className="card flex flex-col gap-3">
       <div className="flex items-start justify-between">
         <div>
           <h3 className="text-base font-semibold text-brand-text">
-            {bounty.title || bounty.bounty_id || 'Untitled bounty'}
+            <a className="hover:underline" href={`/bounties/${bounty.creator}/${bounty.bounty_id}`}>
+              {bounty.title || bounty.bounty_id || 'Untitled bounty'}
+            </a>
           </h3>
           <p className="text-xs text-brand-textMuted mt-0.5">
             creator <span className="font-mono">{short(bounty.creator)}</span>
@@ -71,8 +75,8 @@ function BountyCard({ bounty }: { bounty: Bounty & { title?: string; description
 
       <div className="flex gap-2 pt-1">
         {bounty.status === 'Open' && (
-          <button className="btn-primary text-sm w-full" disabled>
-            Claim (next)
+          <button className="btn-primary text-sm w-full" onClick={() => onClaim(bounty.address)}>
+            Claim
           </button>
         )}
         {bounty.status === 'Claimed' && (
@@ -92,11 +96,18 @@ function BountyCard({ bounty }: { bounty: Bounty & { title?: string; description
 
 export default function BountiesPage() {
   const { connection } = useConnection();
+  const wallet = useWallet();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
-  const [bounties, setBounties] = useState<Bounty[]>([]);
+  const [bounties, setBounties] = useState<any[]>([]);
 
   const programId = useMemo(() => new PublicKey(AGENTGRIND_PROGRAM_ID.toBase58()), []);
+
+  const program = useMemo(() => {
+    if (!wallet.publicKey) return null;
+    const provider = new anchor.AnchorProvider(connection, wallet as any, { commitment: 'confirmed' });
+    return new anchor.Program(idl as any, provider);
+  }, [connection, wallet]);
 
   useEffect(() => {
     let cancelled = false;
@@ -112,12 +123,12 @@ export default function BountiesPage() {
         const decoded = accounts
           .map((a) => {
             try {
-              return decodeBounty(a.account.data);
+              return { ...decodeBounty(a.account.data), address: a.pubkey.toBase58() };
             } catch {
               return null;
             }
           })
-          .filter(Boolean) as Bounty[];
+          .filter(Boolean) as any[];
 
         // fetch off-chain metadata (title/description)
         const metaResp = await fetch('/api/metadata/batch', {
@@ -138,7 +149,6 @@ export default function BountiesPage() {
           const m = metaMap.get(`${b.creator}:${b.bounty_id}`);
           return {
             ...b,
-            // piggyback in proof_uri slot for now? no, just attach fields ad-hoc
             title: m?.title,
             description: m?.description,
           } as any;
@@ -185,8 +195,31 @@ export default function BountiesPage() {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {bounties.map((b) => (
-            <BountyCard key={`${b.creator}-${b.bounty_id}-${b.deadline}`} bounty={b} />
+          {bounties.map((b: any) => (
+            <BountyCard
+              key={`${b.creator}-${b.bounty_id}-${b.deadline}`}
+              bounty={b}
+              onClaim={async (address) => {
+                setError('');
+                if (!wallet.publicKey || !program) {
+                  setError('Connect wallet to claim.');
+                  return;
+                }
+                try {
+                  await program.methods
+                    .claimBounty()
+                    .accounts({ bounty: new PublicKey(address), claimer: wallet.publicKey })
+                    .rpc();
+
+                  // refresh claimed status locally
+                  setBounties((prev) =>
+                    prev.map((x: any) => (x.address === address ? { ...x, status: 'Claimed', claimer: wallet.publicKey.toBase58() } : x))
+                  );
+                } catch (e: any) {
+                  setError(e?.message || 'Claim failed');
+                }
+              }}
+            />
           ))}
         </div>
       )}
