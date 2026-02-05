@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-import { creatorProfilePda, decodeCreatorProfile } from '../lib/agentgrind';
+import * as anchor from '@coral-xyz/anchor';
+import idl from '../idl/agentgrind.json';
+import { AGENTGRIND_PROGRAM_ID, creatorProfilePda, decodeCreatorProfile } from '../lib/agentgrind';
 
 const short = (s: string, n = 4) => `${s.slice(0, n)}…${s.slice(-n)}`;
 
@@ -15,13 +17,27 @@ type LoadState =
 
 export default function Profile() {
   const { connection } = useConnection();
-  const { publicKey } = useWallet();
+  const wallet = useWallet();
+  const publicKey = wallet.publicKey;
   const [state, setState] = useState<LoadState>({ kind: 'idle' });
+  const [xHandleFromOAuth, setXHandleFromOAuth] = useState<string>('');
+  const [linking, setLinking] = useState(false);
+  const [linkError, setLinkError] = useState('');
+  const [linkSig, setLinkSig] = useState('');
 
   const [pda] = useMemo(() => {
     if (!publicKey) return [null as any, null as any];
     return creatorProfilePda(publicKey);
   }, [publicKey]);
+
+  useEffect(() => {
+    // grab x_handle returned from OAuth callback
+    if (typeof window !== 'undefined') {
+      const u = new URL(window.location.href);
+      const xh = u.searchParams.get('x_handle') || '';
+      if (xh) setXHandleFromOAuth(xh);
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -61,6 +77,52 @@ export default function Profile() {
       ? { label: 'Limited', color: 'text-yellow-400' }
       : { label: 'Blocked', color: 'text-red-400' };
 
+  const confirmLinkX = async () => {
+    setLinkError('');
+    setLinkSig('');
+
+    if (!publicKey || !wallet.signTransaction) {
+      setLinkError('Connect a wallet that can sign transactions.');
+      return;
+    }
+    if (!xHandleFromOAuth) {
+      setLinkError('Missing x_handle from OAuth callback.');
+      return;
+    }
+
+    setLinking(true);
+    try {
+      const provider = new anchor.AnchorProvider(connection, wallet as any, { commitment: 'confirmed' });
+      const program = new anchor.Program(idl as any, provider);
+      const handle = xHandleFromOAuth.replace(/^@/, '');
+
+      const sig = await program.methods
+        .linkX(handle)
+        .accounts({
+          profile: pda,
+          authority: publicKey,
+        })
+        .rpc();
+
+      setLinkSig(sig);
+      // refresh profile
+      const info = await connection.getAccountInfo(pda);
+      if (info?.data) setState({ kind: 'loaded', profile: decodeCreatorProfile(info.data) });
+
+      // remove query param to avoid confusion on refresh
+      if (typeof window !== 'undefined') {
+        const u = new URL(window.location.href);
+        u.searchParams.delete('x_handle');
+        window.history.replaceState({}, '', u.toString());
+      }
+      setXHandleFromOAuth('');
+    } catch (e: any) {
+      setLinkError(e?.message || 'Failed to link X');
+    } finally {
+      setLinking(false);
+    }
+  };
+
   return (
     <div className="max-w-lg mx-auto">
       <h1 className="text-2xl font-bold text-brand-text mb-2">Creator Profile</h1>
@@ -89,6 +151,32 @@ export default function Profile() {
         </div>
       ) : null}
 
+      {publicKey && xHandleFromOAuth && profile && !profile.x_verified && (
+        <div className="card p-5 mt-4">
+          <p className="text-sm text-brand-text">X account verified via OAuth:</p>
+          <p className="text-sm font-mono text-brand-green mt-1">{xHandleFromOAuth}</p>
+          <p className="text-xs text-brand-textMuted mt-2">
+            Click confirm to write it on-chain (this requires a wallet signature).
+          </p>
+
+          {linkError && <p className="text-xs text-red-400 mt-2 break-words">{linkError}</p>}
+          {linkSig && (
+            <a
+              className="text-xs text-brand-green hover:underline mt-2 inline-block font-mono break-all"
+              href={`https://solscan.io/tx/${linkSig}?cluster=devnet`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {linkSig}
+            </a>
+          )}
+
+          <button className="btn-primary text-sm mt-4" onClick={confirmLinkX} disabled={linking}>
+            {linking ? 'Confirming…' : 'Confirm on-chain'}
+          </button>
+        </div>
+      )}
+
       {profile && (
         <div className="card flex flex-col gap-5 mt-4">
           <div className="flex items-center justify-between">
@@ -101,9 +189,9 @@ export default function Profile() {
                   <span className="text-xs text-brand-textMuted ml-2">(verified)</span>
                 </p>
               ) : (
-                <button className="text-sm text-brand-green hover:underline mt-0.5">
-                  + Link X account (next)
-                </button>
+                <a className="text-sm text-brand-green hover:underline mt-0.5" href="/api/x/start?next=/profile">
+                  + Link X account
+                </a>
               )}
             </div>
             <span className={`badge text-sm font-semibold ${repTier.color} bg-brand-card border border-brand-border`}>
