@@ -1,0 +1,962 @@
+{
+  "address": "HMUV19dpEUPxjSYdqnp4usgcsjHp6WrZ5ijutmKXcTDz",
+  "metadata": {
+    "name": "agentgrind",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "AgentGrind: Trustless bounty escrow for AI agents"
+  },
+  "instructions": [
+    {
+      "name": "approve_and_pay",
+      "docs": [
+        "Creator approves submitted proof → pays agent (+15 rep)"
+      ],
+      "discriminator": [
+        17,
+        171,
+        252,
+        175,
+        75,
+        86,
+        76,
+        96
+      ],
+      "accounts": [
+        {
+          "name": "bounty",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  117,
+                  110,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "creator"
+              },
+              {
+                "kind": "account",
+                "path": "bounty.bounty_id",
+                "account": "Bounty"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bounty"
+              }
+            ]
+          }
+        },
+        {
+          "name": "profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  102,
+                  105,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "creator"
+              }
+            ]
+          }
+        },
+        {
+          "name": "claimer_token_account",
+          "writable": true
+        },
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "cancel_bounty",
+      "docs": [
+        "Creator cancels unclaimed bounty after deadline (refund, 0 rep change)"
+      ],
+      "discriminator": [
+        79,
+        65,
+        107,
+        143,
+        128,
+        165,
+        135,
+        46
+      ],
+      "accounts": [
+        {
+          "name": "bounty",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  117,
+                  110,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "creator"
+              },
+              {
+                "kind": "account",
+                "path": "bounty.bounty_id",
+                "account": "Bounty"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bounty"
+              }
+            ]
+          }
+        },
+        {
+          "name": "profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  102,
+                  105,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "creator"
+              }
+            ]
+          }
+        },
+        {
+          "name": "creator_token_account",
+          "writable": true
+        },
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "claim_bounty",
+      "docs": [
+        "Agent claims an open bounty"
+      ],
+      "discriminator": [
+        225,
+        157,
+        163,
+        238,
+        239,
+        169,
+        75,
+        226
+      ],
+      "accounts": [
+        {
+          "name": "bounty",
+          "writable": true
+        },
+        {
+          "name": "claimer",
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "create_bounty",
+      "docs": [
+        "Create a new bounty (deposits USDC into escrow, inits CreatorProfile if needed)"
+      ],
+      "discriminator": [
+        122,
+        90,
+        14,
+        143,
+        8,
+        125,
+        200,
+        2
+      ],
+      "accounts": [
+        {
+          "name": "bounty",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  117,
+                  110,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "creator"
+              },
+              {
+                "kind": "arg",
+                "path": "bounty_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bounty"
+              }
+            ]
+          }
+        },
+        {
+          "name": "profile",
+          "docs": [
+            "CreatorProfile — init_if_needed so first-time creators get a profile automatically"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  102,
+                  105,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "creator"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "creator_token_account",
+          "writable": true
+        },
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "bounty_id",
+          "type": "string"
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "deadline",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "finalize_bounty",
+      "docs": [
+        "Anyone can call after 48h review window → auto-pays agent (-30 rep to creator)"
+      ],
+      "discriminator": [
+        167,
+        144,
+        19,
+        208,
+        254,
+        194,
+        243,
+        184
+      ],
+      "accounts": [
+        {
+          "name": "bounty",
+          "writable": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bounty"
+              }
+            ]
+          }
+        },
+        {
+          "name": "creator_profile",
+          "docs": [
+            "Creator's profile — penalised for ghosting"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  102,
+                  105,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bounty.creator",
+                "account": "Bounty"
+              }
+            ]
+          }
+        },
+        {
+          "name": "caller",
+          "docs": [
+            "Rent recipient (the caller pays nothing, gets nothing — just triggers finalize)"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "claimer_token_account",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "link_x",
+      "docs": [
+        "Link verified X handle to CreatorProfile (called by API after OAuth verification)"
+      ],
+      "discriminator": [
+        111,
+        125,
+        117,
+        65,
+        106,
+        131,
+        62,
+        21
+      ],
+      "accounts": [
+        {
+          "name": "profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  102,
+                  105,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "x_handle",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "reject_bounty",
+      "docs": [
+        "Creator rejects submitted proof → reopens bounty (-15 rep)"
+      ],
+      "discriminator": [
+        225,
+        157,
+        144,
+        219,
+        183,
+        83,
+        13,
+        197
+      ],
+      "accounts": [
+        {
+          "name": "bounty",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  117,
+                  110,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "creator"
+              },
+              {
+                "kind": "account",
+                "path": "bounty.bounty_id",
+                "account": "Bounty"
+              }
+            ]
+          }
+        },
+        {
+          "name": "profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  102,
+                  105,
+                  108,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "creator"
+              }
+            ]
+          }
+        },
+        {
+          "name": "creator",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "reason",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "submit_proof",
+      "docs": [
+        "Agent submits proof of work"
+      ],
+      "discriminator": [
+        54,
+        241,
+        46,
+        84,
+        4,
+        212,
+        46,
+        94
+      ],
+      "accounts": [
+        {
+          "name": "bounty",
+          "writable": true
+        },
+        {
+          "name": "claimer",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "proof_uri",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Bounty",
+      "discriminator": [
+        237,
+        16,
+        105,
+        198,
+        19,
+        69,
+        242,
+        234
+      ]
+    },
+    {
+      "name": "CreatorProfile",
+      "discriminator": [
+        251,
+        250,
+        184,
+        111,
+        214,
+        178,
+        32,
+        221
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidAmount",
+      "msg": "Amount must be greater than zero"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidDeadline",
+      "msg": "Deadline must be in the future"
+    },
+    {
+      "code": 6002,
+      "name": "BountyAlreadyClaimed",
+      "msg": "Bounty has already been claimed"
+    },
+    {
+      "code": 6003,
+      "name": "BountyNotOpen",
+      "msg": "Bounty is not in Open status"
+    },
+    {
+      "code": 6004,
+      "name": "BountyNotClaimed",
+      "msg": "Bounty is not in Claimed status"
+    },
+    {
+      "code": 6005,
+      "name": "BountyNotSubmitted",
+      "msg": "Bounty is not in Submitted status"
+    },
+    {
+      "code": 6006,
+      "name": "UnauthorizedClaimer",
+      "msg": "Only the claimer can submit proof"
+    },
+    {
+      "code": 6007,
+      "name": "UnauthorizedCreator",
+      "msg": "Only the creator can approve or cancel"
+    },
+    {
+      "code": 6008,
+      "name": "DeadlineNotPassed",
+      "msg": "Bounty deadline has not passed"
+    },
+    {
+      "code": 6009,
+      "name": "DeadlineExpired",
+      "msg": "Bounty deadline has passed"
+    },
+    {
+      "code": 6010,
+      "name": "ProofUriTooLong",
+      "msg": "Proof URI exceeds maximum length"
+    },
+    {
+      "code": 6011,
+      "name": "BountyIdTooLong",
+      "msg": "Bounty ID exceeds maximum length"
+    },
+    {
+      "code": 6012,
+      "name": "InvalidMint",
+      "msg": "Invalid mint address"
+    },
+    {
+      "code": 6013,
+      "name": "ReviewWindowActive",
+      "msg": "Review window has not elapsed yet"
+    },
+    {
+      "code": 6014,
+      "name": "RejectionReasonTooLong",
+      "msg": "Rejection reason exceeds maximum length"
+    },
+    {
+      "code": 6015,
+      "name": "ReputationTooLow",
+      "msg": "Creator reputation is too low to create bounties"
+    },
+    {
+      "code": 6016,
+      "name": "AmountExceedsRepLimit",
+      "msg": "Bounty amount exceeds your reputation tier limit"
+    },
+    {
+      "code": 6017,
+      "name": "XHandleTooLong",
+      "msg": "X handle exceeds maximum length"
+    },
+    {
+      "code": 6018,
+      "name": "XAlreadyVerified",
+      "msg": "X handle is already verified"
+    },
+    {
+      "code": 6019,
+      "name": "BountyNotRejected",
+      "msg": "Bounty is not in Rejected status"
+    }
+  ],
+  "types": [
+    {
+      "name": "Bounty",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "creator",
+            "docs": [
+              "Creator of the bounty"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "docs": [
+              "USDC mint"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "docs": [
+              "Bounty amount in USDC atoms"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "deadline",
+            "docs": [
+              "Deadline timestamp (Unix seconds)"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "status",
+            "docs": [
+              "Current bounty status"
+            ],
+            "type": {
+              "defined": {
+                "name": "BountyStatus"
+              }
+            }
+          },
+          {
+            "name": "claimer",
+            "docs": [
+              "Agent who claimed this bounty"
+            ],
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "proof_uri",
+            "docs": [
+              "Proof URI (IPFS/Arweave/URL)"
+            ],
+            "type": "string"
+          },
+          {
+            "name": "proof_submitted_at",
+            "docs": [
+              "Timestamp when proof was submitted (for review window)"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "rejection_reason",
+            "docs": [
+              "Rejection reason (set by creator on reject)"
+            ],
+            "type": "string"
+          },
+          {
+            "name": "bounty_id",
+            "docs": [
+              "Bounty ID (for PDA derivation)"
+            ],
+            "type": "string"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "PDA bump seed"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "BountyStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Open"
+          },
+          {
+            "name": "Claimed"
+          },
+          {
+            "name": "Submitted"
+          },
+          {
+            "name": "Completed"
+          },
+          {
+            "name": "Cancelled"
+          },
+          {
+            "name": "Rejected"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CreatorProfile",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "wallet",
+            "docs": [
+              "Wallet pubkey"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "reputation",
+            "docs": [
+              "Reputation score (starts at INITIAL_REP, floor 0, cap 1000)"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "total_created",
+            "docs": [
+              "Total bounties created"
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "total_completed",
+            "docs": [
+              "Total bounties completed (agent paid)"
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "total_rejected",
+            "docs": [
+              "Total bounties rejected by this creator"
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "total_auto_finalized",
+            "docs": [
+              "Total bounties auto-finalized (creator ghosted)"
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "total_cancelled",
+            "docs": [
+              "Total bounties cancelled"
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "x_handle",
+            "docs": [
+              "Linked X (Twitter) handle (set via API + on-chain confirmation)"
+            ],
+            "type": "string"
+          },
+          {
+            "name": "x_verified",
+            "docs": [
+              "Whether X handle has been verified"
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "PDA bump"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}

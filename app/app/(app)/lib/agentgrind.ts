@@ -12,6 +12,20 @@ export function creatorProfilePda(wallet: PublicKey) {
   );
 }
 
+export function bountyPda(creator: PublicKey, bountyId: string) {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from('bounty'), creator.toBuffer(), Buffer.from(bountyId)],
+    AGENTGRIND_PROGRAM_ID
+  );
+}
+
+export function vaultPda(bounty: PublicKey) {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from('vault'), bounty.toBuffer()],
+    AGENTGRIND_PROGRAM_ID
+  );
+}
+
 export const BOUNTY_ACCOUNT_SIZE = 719;
 
 type CreatorProfile = {
