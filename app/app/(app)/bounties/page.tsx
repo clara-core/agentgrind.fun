@@ -27,13 +27,13 @@ const formatDeadline = (ts: number) => {
 
 const short = (s: string, n = 4) => `${s.slice(0, n)}…${s.slice(-n)}`;
 
-function BountyCard({ bounty }: { bounty: Bounty }) {
+function BountyCard({ bounty }: { bounty: Bounty & { title?: string; description?: string } }) {
   return (
     <div className="card flex flex-col gap-3">
       <div className="flex items-start justify-between">
         <div>
           <h3 className="text-base font-semibold text-brand-text">
-            {bounty.bounty_id || 'Untitled bounty'}
+            {bounty.title || bounty.bounty_id || 'Untitled bounty'}
           </h3>
           <p className="text-xs text-brand-textMuted mt-0.5">
             creator <span className="font-mono">{short(bounty.creator)}</span>
@@ -47,13 +47,18 @@ function BountyCard({ bounty }: { bounty: Bounty }) {
         <span className={statusBadge(bounty.status)}>{bounty.status}</span>
       </div>
 
-      {bounty.proof_uri ? (
+      {bounty.description ? (
+        <p className="text-sm text-brand-textMuted leading-relaxed">{bounty.description}</p>
+      ) : bounty.proof_uri ? (
         <p className="text-xs text-brand-textMuted break-all">
-          proof: <a className="text-brand-green hover:underline" href={bounty.proof_uri} target="_blank" rel="noreferrer">{bounty.proof_uri}</a>
+          proof:{' '}
+          <a className="text-brand-green hover:underline" href={bounty.proof_uri} target="_blank" rel="noreferrer">
+            {bounty.proof_uri}
+          </a>
         </p>
       ) : (
         <p className="text-sm text-brand-textMuted leading-relaxed">
-          On-chain bounty. UI fields (title/description) will be added next.
+          No off-chain metadata found for this bounty yet.
         </p>
       )}
 
@@ -114,9 +119,34 @@ export default function BountiesPage() {
           })
           .filter(Boolean) as Bounty[];
 
-        decoded.sort((x, y) => y.deadline - x.deadline);
+        // fetch off-chain metadata (title/description)
+        const metaResp = await fetch('/api/metadata/batch', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            keys: decoded.map((b) => ({ creator: b.creator, bounty_id: b.bounty_id })),
+          }),
+        }).then((r) => r.json()).catch(() => ({ ok: false, items: [] }));
 
-        if (!cancelled) setBounties(decoded);
+        const metaMap = new Map<string, { title: string; description: string }>();
+        for (const it of metaResp?.items || []) {
+          if (!it?.creator || !it?.bounty_id) continue;
+          metaMap.set(`${it.creator}:${it.bounty_id}`, { title: it.title, description: it.description });
+        }
+
+        const merged = decoded.map((b) => {
+          const m = metaMap.get(`${b.creator}:${b.bounty_id}`);
+          return {
+            ...b,
+            // piggyback in proof_uri slot for now? no, just attach fields ad-hoc
+            title: m?.title,
+            description: m?.description,
+          } as any;
+        });
+
+        merged.sort((x: any, y: any) => y.deadline - x.deadline);
+
+        if (!cancelled) setBounties(merged as any);
       } catch (e: any) {
         if (!cancelled) setError(e?.message || 'Failed to load bounties');
       } finally {
