@@ -22,6 +22,11 @@ pub mod agentgrind {
         instructions::create_bounty::handler(ctx, bounty_id, amount, deadline)
     }
 
+    /// Initialize a CreatorProfile without creating a bounty.
+    pub fn init_profile(ctx: Context<InitProfile>) -> Result<()> {
+        instructions::init_profile::handler(ctx)
+    }
+
     /// Agent claims an open bounty
     pub fn claim_bounty(ctx: Context<ClaimBounty>) -> Result<()> {
         instructions::claim_bounty::handler(ctx)

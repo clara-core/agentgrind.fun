@@ -140,9 +140,41 @@ export default function Profile() {
         <div className="card p-5">
           <p className="text-sm text-brand-text">No on-chain CreatorProfile found yet.</p>
           <p className="text-xs text-brand-textMuted mt-1">
-            It auto-initializes the first time you create a bounty on devnet.
+            Initialize it first (no bounty required), then you can link X.
           </p>
-          <a href="/create" className="btn-primary inline-block mt-4 text-sm">Initialize by posting a bounty</a>
+          {linkError && <p className="text-xs text-red-400 mt-2 break-words">{linkError}</p>}
+          <button
+            className="btn-primary inline-block mt-4 text-sm"
+            onClick={async () => {
+              try {
+                setLinkError('');
+                if (!publicKey || !wallet.signTransaction) throw new Error('Connect a wallet first.');
+                const provider = new anchor.AnchorProvider(connection, wallet as any, { commitment: 'confirmed' });
+                const program = new anchor.Program(idl as any, provider);
+                setLinking(true);
+                const sig = await program.methods
+                  .initProfile()
+                  .accounts({
+                    profile: pda,
+                    authority: publicKey,
+                    systemProgram: anchor.web3.SystemProgram.programId,
+                    rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+                  })
+                  .rpc();
+                setLinkSig(sig);
+                const info = await connection.getAccountInfo(pda);
+                if (info?.data) setState({ kind: 'loaded', profile: decodeCreatorProfile(info.data) });
+              } catch (e: any) {
+                setLinkError(e?.message || 'Failed to init profile');
+              } finally {
+                setLinking(false);
+              }
+            }}
+            disabled={linking}
+          >
+            {linking ? 'Initializing…' : 'Initialize profile'}
+          </button>
+          <a href="/create" className="btn-outline inline-block mt-3 text-sm ml-3">or post a bounty</a>
         </div>
       ) : state.kind === 'error' ? (
         <div className="card p-5">

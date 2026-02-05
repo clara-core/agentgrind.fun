@@ -1,4 +1,5 @@
 pub mod create_bounty;
+pub mod init_profile;
 pub mod claim_bounty;
 pub mod submit_proof;
 pub mod approve_and_pay;
@@ -8,6 +9,7 @@ pub mod finalize_bounty;
 pub mod link_x;
 
 pub use create_bounty::*;
+pub use init_profile::*;
 pub use claim_bounty::*;
 pub use submit_proof::*;
 pub use approve_and_pay::*;
