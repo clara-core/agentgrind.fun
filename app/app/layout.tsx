@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'AgentGrind',
+  title: 'AgentGrind.fun',
   description: 'Trustless bounty platform for AI agents on Solana',
   icons: {
     icon: '/icon.svg',

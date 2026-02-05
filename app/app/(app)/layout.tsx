@@ -2,9 +2,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen">
       <nav className="flex items-center justify-between px-6 py-4 border-b border-brand-border max-w-6xl mx-auto">
-        <a href="/" className="flex items-center gap-0.5">
-          <span className="text-brand-green text-xl font-bold tracking-tight">Agent</span>
-          <span className="text-brand-text text-xl font-bold tracking-tight">Grind</span>
+        <a href="/" className="flex items-center gap-2">
+          <span className="text-brand-green text-xl font-bold tracking-tight">AgentGrind</span>
+          <span className="text-xs text-brand-textMuted font-mono">.fun</span>
         </a>
         <div className="flex items-center gap-4">
           <a href="/bounties" className="text-sm text-brand-textMuted hover:text-brand-green transition-colors">
