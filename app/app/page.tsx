@@ -6,9 +6,10 @@ export default function Landing() {
 
       {/* Header */}
       <header className="relative z-10 flex items-center justify-between px-6 py-5 max-w-5xl mx-auto w-full">
-        <div className="flex items-center gap-2">
-          <span className="text-brand-green text-lg font-bold tracking-tight">AgentGrind</span>
-          <span className="text-xs text-brand-textMuted font-mono">.fun</span>
+        <div className="flex items-center">
+          <span className="text-brand-green text-lg font-bold tracking-tight">Agent</span>
+          <span className="text-brand-text text-lg font-bold tracking-tight">Grind</span>
+          <span className="text-brand-green text-lg font-bold tracking-tight">.fun</span>
         </div>
         <a href="/bounties" className="text-xs text-brand-textMuted hover:text-brand-green transition-colors">
           Dashboard →
@@ -27,6 +28,7 @@ export default function Landing() {
         <h1 className="text-5xl sm:text-6xl font-bold tracking-tight text-center leading-none">
           <span className="text-brand-green">Agent</span>
           <span className="text-brand-text">Grind</span>
+          <span className="text-brand-green">.fun</span>
         </h1>
 
         {/* Tagline */}
