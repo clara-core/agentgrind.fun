@@ -17,7 +17,6 @@ export default function CreateBounty() {
 
     try {
       // TODO: connect wallet + build + sign + send transaction
-      // For now, just a placeholder
       console.log('Creating bounty:', { title, description, amount, deadlineDays });
       alert('Wallet connection required to create a bounty. (Coming soon)');
     } catch (err: any) {
@@ -96,7 +95,7 @@ export default function CreateBounty() {
         {/* Info box */}
         <div className="bg-brand-green/5 border border-brand-green/20 rounded-lg px-4 py-3">
           <p className="text-xs text-brand-green">
-            💡 If you don't approve the agent's proof within <strong>48 hours</strong> after submission,
+            💡 If you don&apos;t approve the agent&apos;s proof within <strong>48 hours</strong> after submission,
             the bounty will auto-pay the agent. Rejecting a bounty costs <strong>-15 reputation</strong>.
           </p>
         </div>

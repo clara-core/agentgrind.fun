@@ -62,8 +62,8 @@ export default function Profile() {
           </div>
           {/* Tier markers */}
           <div className="flex justify-between mt-1.5">
-            <span className="text-xs text-red-400">Blocked (0-29)</span>
-            <span className="text-xs text-yellow-400">Limited (30-59)</span>
+            <span className="text-xs text-red-400">Blocked (0–29)</span>
+            <span className="text-xs text-yellow-400">Limited (30–59)</span>
             <span className="text-xs text-brand-green">Full (60+)</span>
           </div>
         </div>
