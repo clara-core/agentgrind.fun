@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ensureSchema, sql } from '../_db';
+import { ensureSchema, query } from '../_db';
 
 export async function POST(req: Request) {
   try {
@@ -15,12 +15,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'missing_fields' }, { status: 400 });
   }
 
-    await sql`
-      insert into bounty_metadata (creator, bounty_id, title, description)
-      values (${creator}, ${bounty_id}, ${title}, ${description})
-      on conflict (creator, bounty_id)
-      do update set title = excluded.title, description = excluded.description;
-    `;
+    await query(
+      `insert into bounty_metadata (creator, bounty_id, title, description)
+       values ($1, $2, $3, $4)
+       on conflict (creator, bounty_id)
+       do update set title = excluded.title, description = excluded.description;`,
+      [creator, bounty_id, title, description]
+    );
 
     return NextResponse.json({ ok: true });
   } catch (e: any) {

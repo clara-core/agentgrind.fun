@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ensureSchema, sql } from '../../_db';
+import { ensureSchema, query } from '../../_db';
 
 export async function POST(req: Request) {
   try {
@@ -27,12 +27,12 @@ export async function POST(req: Request) {
 
   // Simplicity first: fetch recent metadata and filter in-memory.
   // (Devnet scale is small; we can tighten query later.)
-  const { rows } = await sql`
-    select creator, bounty_id, title, description
-    from bounty_metadata
-    order by created_at desc
-    limit 500;
-  `;
+    const { rows } = await query(
+      `select creator, bounty_id, title, description
+       from bounty_metadata
+       order by created_at desc
+       limit 500;`
+    );
 
     const filtered = rows.filter((r: any) => wanted.has(`${r.creator}:${r.bounty_id}`));
     return NextResponse.json({ ok: true, items: filtered });
