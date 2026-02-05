@@ -4,8 +4,9 @@ import { ensureSchema, query } from '../../_db';
 export async function POST(req: Request) {
   try {
     await ensureSchema();
-    const body = await req.json();
-  const keys = Array.isArray(body.keys) ? body.keys : [];
+    const raw = await req.text();
+    const body = raw ? JSON.parse(raw) : {};
+    const keys = Array.isArray((body as any).keys) ? (body as any).keys : [];
 
   // keys: [{creator,bounty_id}]
   const creatorSet = new Set<string>();

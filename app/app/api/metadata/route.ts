@@ -4,7 +4,8 @@ import { ensureSchema, query } from '../_db';
 export async function POST(req: Request) {
   try {
     await ensureSchema();
-    const body = await req.json();
+    const raw = await req.text();
+    const body = raw ? JSON.parse(raw) : {};
 
   const creator = String(body.creator || '');
   const bounty_id = String(body.bounty_id || '');
