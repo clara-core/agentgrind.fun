@@ -174,7 +174,7 @@ export default function Profile() {
           >
             {linking ? 'Initializing…' : 'Initialize profile'}
           </button>
-          <a href="/create" className="btn-outline inline-block mt-3 text-sm ml-3">or post a bounty</a>
+          <a href="/create" className="btn-outline inline-block mt-3 text-sm ml-3">Post a bounty</a>
         </div>
       ) : state.kind === 'error' ? (
         <div className="card p-5">
