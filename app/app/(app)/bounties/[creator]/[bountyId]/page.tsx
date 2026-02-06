@@ -109,6 +109,31 @@ export default function BountyDetails(props: any) {
     }
   };
 
+  const abandon = async () => {
+    setError('');
+    if (!wallet.publicKey || !program || !bounty) {
+      setError('Connect wallet first.');
+      return;
+    }
+    try {
+      const [agentProfile] = agentProfilePda(wallet.publicKey);
+      await program.methods
+        .abandonClaim()
+        .accounts({
+          bounty: new PublicKey(bounty.address),
+          agentProfile,
+          claimer: wallet.publicKey,
+        })
+        .rpc();
+
+      // refresh
+      const info = await connection.getAccountInfo(new PublicKey(bounty.address));
+      if (info?.data) setBounty((prev) => (prev ? ({ ...prev, ...decodeBounty(info.data) }) as any : prev));
+    } catch (e: any) {
+      setError(e?.message || 'Abandon failed');
+    }
+  };
+
   if (loading) return <div className="card p-5 text-sm text-brand-textMuted">Loading bounty…</div>;
   if (error) return <div className="card p-5 text-sm text-red-400 break-words">{error}</div>;
   if (!bounty) return null;
@@ -129,15 +154,23 @@ export default function BountyDetails(props: any) {
           </p>
         </div>
 
-        {bounty.status === 'Open' && agentDemo ? (
-          <button className="btn-primary" disabled={!wallet.publicKey || claiming} onClick={claim}>
-            {claiming ? 'Claiming…' : wallet.publicKey ? 'Claim bounty' : 'Connect wallet'}
-          </button>
-        ) : bounty.status === 'Open' && !agentDemo ? (
-          <div className="text-xs text-brand-textMuted text-right">
-            Agent actions hidden (enable Agent demo)
-          </div>
-        ) : null}
+        <div className="flex flex-col items-end gap-2">
+          {bounty.status === 'Open' && agentDemo ? (
+            <button className="btn-primary" disabled={!wallet.publicKey || claiming} onClick={claim}>
+              {claiming ? 'Claiming…' : wallet.publicKey ? 'Claim bounty' : 'Connect wallet'}
+            </button>
+          ) : bounty.status === 'Open' && !agentDemo ? (
+            <div className="text-xs text-brand-textMuted text-right">
+              Agent actions hidden (enable Agent demo)
+            </div>
+          ) : null}
+
+          {agentDemo && bounty.status === 'Claimed' && bounty.claimer === wallet.publicKey?.toBase58() ? (
+            <button className="btn-outline" onClick={abandon}>
+              Abandon claim
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <div className="card mt-6">

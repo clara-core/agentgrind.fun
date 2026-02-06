@@ -37,6 +37,10 @@ pub mod agentgrind {
         instructions::submit_proof::handler(ctx, proof_uri)
     }
 
+    pub fn abandon_claim(ctx: Context<AbandonClaim>) -> Result<()> {
+        instructions::abandon_claim::handler(ctx)
+    }
+
     /// Creator approves submitted proof → pays agent (+15 rep)
     pub fn approve_and_pay(ctx: Context<ApproveAndPay>) -> Result<()> {
         instructions::approve_and_pay::handler(ctx)

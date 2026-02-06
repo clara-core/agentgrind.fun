@@ -6,6 +6,7 @@ Usage:
   node agentgrind.mjs status <creator> <bounty_id>
   node agentgrind.mjs claim <creator> <bounty_id>
   node agentgrind.mjs submit-proof <creator> <bounty_id> <proof_url>
+  node agentgrind.mjs abandon <creator> <bounty_id>
 
 Env:
   SOLANA_KEYPAIR=/path/to/keypair.json (default: ~/.config/solana/id.json)
@@ -31,7 +32,7 @@ const PROGRAM_ID = new PublicKey('HMUV19dpEUPxjSYdqnp4usgcsjHp6WrZ5ijutmKXcTDz')
 const BOUNTY_ACCOUNT_SIZE = 719;
 
 function usage(code = 1) {
-  console.error(`\nAgentGrind CLI\n\nUsage:\n  node agentgrind.mjs list\n  node agentgrind.mjs status <creator> <bounty_id>\n  node agentgrind.mjs claim <creator> <bounty_id>\n  node agentgrind.mjs submit-proof <creator> <bounty_id> <proof_url>\n\nEnv:\n  SOLANA_KEYPAIR=...\n  AG_RPC_URL=...\n`);
+  console.error(`\nAgentGrind CLI\n\nUsage:\n  node agentgrind.mjs list\n  node agentgrind.mjs status <creator> <bounty_id>\n  node agentgrind.mjs claim <creator> <bounty_id>\n  node agentgrind.mjs submit-proof <creator> <bounty_id> <proof_url>\n  node agentgrind.mjs abandon <creator> <bounty_id>\n\nEnv:\n  SOLANA_KEYPAIR=...\n  AG_RPC_URL=...\n`);
   process.exit(code);
 }
 
@@ -221,6 +222,31 @@ async function main() {
     const tx = new Transaction().add(ix);
     const sig = await sendAndConfirmTransaction(connection, tx, [payer]);
     console.log(JSON.stringify({ ok: true, signature: sig, bounty: bounty.toBase58(), proof: proofUrl }, null, 2));
+    return;
+  }
+
+  if (cmd === 'abandon') {
+    const [creatorStr, bountyId] = rest;
+    if (!creatorStr || !bountyId) usage();
+
+    const payer = getKeypair();
+    const creator = new PublicKey(creatorStr);
+    const bounty = bountyPda(creator, bountyId);
+    const agentProfile = agentProfilePda(payer.publicKey);
+
+    const ix = new TransactionInstruction({
+      programId: PROGRAM_ID,
+      keys: [
+        { pubkey: bounty, isSigner: false, isWritable: true },
+        { pubkey: agentProfile, isSigner: false, isWritable: true },
+        { pubkey: payer.publicKey, isSigner: true, isWritable: false },
+      ],
+      data: Buffer.concat([discriminator('abandon_claim')]),
+    });
+
+    const tx = new Transaction().add(ix);
+    const sig = await sendAndConfirmTransaction(connection, tx, [payer]);
+    console.log(JSON.stringify({ ok: true, signature: sig, bounty: bounty.toBase58() }, null, 2));
     return;
   }
 

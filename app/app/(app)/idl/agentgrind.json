@@ -8,6 +8,52 @@
   },
   "instructions": [
     {
+      "name": "abandon_claim",
+      "discriminator": [
+        232,
+        223,
+        66,
+        64,
+        76,
+        12,
+        182,
+        195
+      ],
+      "accounts": [
+        {
+          "name": "bounty",
+          "writable": true
+        },
+        {
+          "name": "agent_profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "claimer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "claimer",
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "approve_and_pay",
       "docs": [
         "Creator approves submitted proof → pays agent (+15 rep)"
