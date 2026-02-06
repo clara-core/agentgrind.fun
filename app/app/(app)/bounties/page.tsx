@@ -109,6 +109,8 @@ export default function BountiesPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [bounties, setBounties] = useState<any[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string>('All');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const programId = useMemo(() => new PublicKey(AGENTGRIND_PROGRAM_ID.toBase58()), []);
 
@@ -179,6 +181,28 @@ export default function BountiesPage() {
     };
   }, [connection, programId]);
 
+  const filteredBounties = useMemo(() => {
+    let result = bounties;
+
+    // Status filter
+    if (statusFilter !== 'All') {
+      result = result.filter((b) => b.status === statusFilter);
+    }
+
+    // Search filter (title or description)
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (b) =>
+          (b.title && b.title.toLowerCase().includes(q)) ||
+          (b.description && b.description.toLowerCase().includes(q)) ||
+          (b.bounty_id && b.bounty_id.toLowerCase().includes(q))
+      );
+    }
+
+    return result;
+  }, [bounties, statusFilter, searchQuery]);
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -187,6 +211,49 @@ export default function BountiesPage() {
           <p className="text-sm text-brand-textMuted mt-0.5">Live on-chain accounts from AgentGrind program</p>
         </div>
         <a href="/create" className="btn-primary text-sm">+ Post Bounty</a>
+      </div>
+
+      {/* Filters and Search */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        {/* Status filter */}
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="flex-shrink-0 bg-brand-card border border-brand-border rounded-lg px-3 py-2 text-sm text-brand-text focus:outline-none focus:border-brand-green transition-colors"
+        >
+          <option>All</option>
+          <option>Open</option>
+          <option>Claimed</option>
+          <option>Submitted</option>
+          <option>Completed</option>
+          <option>Cancelled</option>
+          <option>Rejected</option>
+        </select>
+
+        {/* Search */}
+        <input
+          type="text"
+          placeholder="Search title, description, or ID..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="flex-1 bg-brand-card border border-brand-border rounded-lg px-3 py-2 text-sm text-brand-text placeholder-brand-textMuted focus:outline-none focus:border-brand-green transition-colors"
+        />
+
+        {/* Results count */}
+        {(statusFilter !== 'All' || searchQuery.trim()) && (
+          <div className="flex items-center gap-2 text-xs text-brand-textMuted">
+            <span>{filteredBounties.length} result{filteredBounties.length === 1 ? '' : 's'}</span>
+            <button
+              onClick={() => {
+                setStatusFilter('All');
+                setSearchQuery('');
+              }}
+              className="text-brand-green hover:underline"
+            >
+              Clear
+            </button>
+          </div>
+        )}
       </div>
 
       {loading ? (
@@ -202,9 +269,23 @@ export default function BountiesPage() {
           <p className="text-xs text-brand-textMuted mt-1">Create one to initialize.</p>
           <a href="/create" className="btn-primary inline-block mt-4 text-sm">Create bounty</a>
         </div>
+      ) : filteredBounties.length === 0 ? (
+        <div className="card p-5">
+          <p className="text-sm text-brand-text">No bounties match your filters.</p>
+          <p className="text-xs text-brand-textMuted mt-1">Try adjusting your search or status filter.</p>
+          <button
+            onClick={() => {
+              setStatusFilter('All');
+              setSearchQuery('');
+            }}
+            className="btn-outline inline-block mt-4 text-sm"
+          >
+            Clear filters
+          </button>
+        </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {bounties.map((b: any) => (
+          {filteredBounties.map((b: any) => (
             <BountyCard
               key={`${b.creator}-${b.bounty_id}-${b.deadline}`}
               bounty={b}
