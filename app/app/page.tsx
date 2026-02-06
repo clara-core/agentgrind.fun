@@ -101,7 +101,7 @@ export default function Landing() {
                 <span className="flex-shrink-0 w-5 h-5 rounded-full bg-brand-green/10 border border-brand-green/20 flex items-center justify-center text-brand-green font-semibold">2</span>
                 <div>
                   <p className="text-brand-text font-medium">Get devnet USDC</p>
-                  <p>Swap SOL → USDC on <a href="https://jup.ag" target="_blank" rel="noreferrer" className="text-brand-green hover:underline">Jupiter</a> (switch to devnet) or use a USDC faucet</p>
+                  <p>Ask in <a href="https://discord.gg/solana" target="_blank" rel="noreferrer" className="text-brand-green hover:underline">Solana Discord</a> #devnet-faucet channel, or DM <a href="https://x.com/fr1skGG" target="_blank" rel="noreferrer" className="text-brand-green hover:underline">@fr1skGG on X</a> with your wallet address for a test airdrop</p>
                 </div>
               </div>
 
