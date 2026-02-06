@@ -1,10 +1,39 @@
 'use client';
 
-import { ReactNode, useMemo } from 'react';
-import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
+import { ReactNode, useEffect, useMemo } from 'react';
+import { ConnectionProvider, WalletProvider, useWallet } from '@solana/wallet-adapter-react';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
 import { SolflareWalletAdapter } from '@solana/wallet-adapter-solflare';
+
+const STICKY_KEY = 'ag_wallet_sticky_connected';
+
+function WalletStickyConnect() {
+  const { wallet, connected, connecting, connect } = useWallet();
+
+  // If the user previously connected and did NOT explicitly disconnect, reconnect on load/navigation.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const want = window.localStorage.getItem(STICKY_KEY) === '1';
+    if (!want) return;
+    if (!wallet) return;
+    if (connected || connecting) return;
+
+    connect().catch(() => {
+      // If connect fails (e.g. extension not available), don't loop.
+      window.localStorage.removeItem(STICKY_KEY);
+    });
+  }, [wallet?.adapter?.name, wallet, connected, connecting, connect]);
+
+  // Track explicit connect/disconnect via the connected boolean.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (connected) window.localStorage.setItem(STICKY_KEY, '1');
+    else window.localStorage.removeItem(STICKY_KEY);
+  }, [connected]);
+
+  return null;
+}
 
 export function AppWalletProvider({ children }: { children: ReactNode }) {
   // Devnet-first (per Marko). Switch later for mainnet.
@@ -14,8 +43,11 @@ export function AppWalletProvider({ children }: { children: ReactNode }) {
 
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect>
-        <WalletModalProvider>{children}</WalletModalProvider>
+      <WalletProvider wallets={wallets} autoConnect={false}>
+        <WalletModalProvider>
+          <WalletStickyConnect />
+          {children}
+        </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>
   );
