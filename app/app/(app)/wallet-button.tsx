@@ -11,7 +11,7 @@ function shortKey(s: string) {
 }
 
 export function WalletButton() {
-  const { connected, connecting, publicKey, disconnect, wallet } = useWallet();
+  const { connected, connecting, publicKey, disconnect, wallet, connect } = useWallet();
   const { setVisible } = useWalletModal();
   const [stickyWanted, setStickyWanted] = useState(false);
 
@@ -34,7 +34,16 @@ export function WalletButton() {
     <div className="flex items-center gap-2">
       <button
         type="button"
-        onClick={() => setVisible(true)}
+        onClick={() => {
+          if (!connected && wallet) {
+            connect().catch(() => {
+              // If connect fails, fall back to showing the modal.
+              setVisible(true);
+            });
+            return;
+          }
+          setVisible(true);
+        }}
         className={`h-9 min-w-[170px] rounded-lg border px-3 text-sm transition-colors flex items-center gap-2 justify-center ${
           connected
             ? 'border-brand-green/50 text-brand-text hover:border-brand-green'
