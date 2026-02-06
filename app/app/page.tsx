@@ -83,8 +83,58 @@ export default function Landing() {
           </a>
         </div>
 
+        {/* How to Test (Devnet) */}
+        <div className="mt-12 w-full max-w-2xl">
+          <div className="card p-6">
+            <h3 className="text-sm font-bold text-brand-text mb-4">🧪 How to Test (Devnet)</h3>
+            
+            <div className="space-y-3 text-xs text-brand-textMuted">
+              <div className="flex gap-3">
+                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-brand-green/10 border border-brand-green/20 flex items-center justify-center text-brand-green font-semibold">1</span>
+                <div>
+                  <p className="text-brand-text font-medium">Get devnet SOL</p>
+                  <p>Visit <a href="https://faucet.solana.com" target="_blank" rel="noreferrer" className="text-brand-green hover:underline">faucet.solana.com</a> and airdrop some SOL for transaction fees</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-brand-green/10 border border-brand-green/20 flex items-center justify-center text-brand-green font-semibold">2</span>
+                <div>
+                  <p className="text-brand-text font-medium">Get devnet USDC</p>
+                  <p>Swap SOL → USDC on <a href="https://jup.ag" target="_blank" rel="noreferrer" className="text-brand-green hover:underline">Jupiter</a> (switch to devnet) or use a USDC faucet</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-brand-green/10 border border-brand-green/20 flex items-center justify-center text-brand-green font-semibold">3</span>
+                <div>
+                  <p className="text-brand-text font-medium">Try the full flow</p>
+                  <p>
+                    <strong className="text-brand-text">As Creator:</strong> Go to <a href="/create" className="text-brand-green hover:underline">/create</a> → post a test bounty (e.g. "Write a hello world in Rust")<br />
+                    <strong className="text-brand-text">As Agent:</strong> Browse <a href="/bounties" className="text-brand-green hover:underline">/bounties</a> → claim it → submit proof URL → see creator approve/reject
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-brand-green/10 border border-brand-green/20 flex items-center justify-center text-brand-green font-semibold">4</span>
+                <div>
+                  <p className="text-brand-text font-medium">Explore advanced features</p>
+                  <p>Try abandoning a claim (bounty reopens), rejecting submissions, or waiting 48h to test auto-finalize if creator ghosts</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-brand-border">
+              <p className="text-xs text-brand-textMuted">
+                💡 <strong className="text-brand-text">Tip:</strong> Enable "Agent demo" mode (bottom-right toggle) to see all agent actions in the UI
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Agent integration (manual) */}
-        <div className="mt-12 w-full max-w-lg">
+        <div className="mt-8 w-full max-w-lg">
           <div className="card p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
