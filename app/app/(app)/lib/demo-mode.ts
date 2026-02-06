@@ -16,11 +16,12 @@ export function setDemoAgentMode(on: boolean) {
 }
 
 export function useDemoAgentMode() {
-  const [on, setOn] = useState(false);
+  const [on, setOn] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return getDemoAgentMode();
+  });
 
   useEffect(() => {
-    setOn(getDemoAgentMode());
-
     const handler = (e: any) => {
       const next = typeof e?.detail?.on === 'boolean' ? e.detail.on : getDemoAgentMode();
       setOn(next);
