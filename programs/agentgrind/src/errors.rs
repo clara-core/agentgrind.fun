@@ -61,4 +61,7 @@ pub enum AgentGrindError {
 
     #[msg("Bounty is not in Rejected status")]
     BountyNotRejected,
+
+    #[msg("Agent already has an active claimed bounty")]
+    AgentHasActiveBounty,
 }

@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-import { PublicKey } from '@solana/web3.js';
+import { PublicKey, SystemProgram } from '@solana/web3.js';
 import * as anchor from '@coral-xyz/anchor';
 
 import idl from '../../../idl/agentgrind.json';
-import { bountyPda, decodeBounty, type Bounty } from '../../../lib/agentgrind';
+import { agentProfilePda, bountyPda, decodeBounty, type Bounty } from '../../../lib/agentgrind';
 import { useDemoAgentMode } from '../../../lib/demo-mode';
 
 const short = (s: string, n = 4) => `${s.slice(0, n)}…${s.slice(-n)}`;
@@ -85,11 +85,15 @@ export default function BountyDetails(props: any) {
     }
     setClaiming(true);
     try {
+      const [agentProfile] = agentProfilePda(wallet.publicKey);
+
       const sig = await program.methods
         .claimBounty()
         .accounts({
           bounty: new PublicKey(bounty.address),
+          agentProfile,
           claimer: wallet.publicKey,
+          systemProgram: SystemProgram.programId,
         })
         .rpc();
 

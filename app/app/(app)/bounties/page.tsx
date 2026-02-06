@@ -3,11 +3,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { useDemoAgentMode } from '../lib/demo-mode';
-import { BOUNTY_ACCOUNT_SIZE, decodeBounty, type Bounty } from '../lib/agentgrind';
-import { PublicKey } from '@solana/web3.js';
+import { AGENTGRIND_PROGRAM_ID, agentProfilePda, BOUNTY_ACCOUNT_SIZE, decodeBounty, type Bounty } from '../lib/agentgrind';
+import { PublicKey, SystemProgram } from '@solana/web3.js';
 import * as anchor from '@coral-xyz/anchor';
 import idl from '../idl/agentgrind.json';
-import { AGENTGRIND_PROGRAM_ID } from '../lib/agentgrind';
 
 const statusBadge = (status: string) => {
   const map: Record<string, string> = {
@@ -218,9 +217,16 @@ export default function BountiesPage() {
                   return;
                 }
                 try {
+                  const [agentProfile] = agentProfilePda(wallet.publicKey);
+
                   await program.methods
                     .claimBounty()
-                    .accounts({ bounty: new PublicKey(address), claimer: wallet.publicKey })
+                    .accounts({
+                      bounty: new PublicKey(address),
+                      agentProfile,
+                      claimer: wallet.publicKey,
+                      systemProgram: SystemProgram.programId,
+                    })
                     .rpc();
 
                   // refresh claimed status locally

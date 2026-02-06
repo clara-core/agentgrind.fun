@@ -47,6 +47,24 @@ impl Bounty {
     pub const MAX_SIZE: usize = 8 + 32 + 32 + 8 + 8 + 1 + 33 + 260 + 8 + 260 + 68 + 1;
 }
 
+// ─── AgentProfile ─────────────────────────────────────────────────────────
+
+#[account]
+#[derive(Default)]
+pub struct AgentProfile {
+    /// Wallet pubkey
+    pub wallet: Pubkey,
+    /// If set, the agent has an active claimed bounty and must submit proof before claiming another
+    pub active_bounty: Option<Pubkey>,
+    /// PDA bump
+    pub bump: u8,
+}
+
+impl AgentProfile {
+    /// 8 (disc) + 32 (wallet) + 33 (option<pubkey>) + 1 (bump)
+    pub const MAX_SIZE: usize = 8 + 32 + 33 + 1;
+}
+
 // ─── CreatorProfile ────────────────────────────────────────────────────────
 
 #[account]

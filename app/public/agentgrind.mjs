@@ -21,6 +21,7 @@ import {
   Connection,
   Keypair,
   PublicKey,
+  SystemProgram,
   Transaction,
   TransactionInstruction,
   sendAndConfirmTransaction,
@@ -58,6 +59,13 @@ function encodeString(s) {
 function bountyPda(creator, bountyId) {
   return PublicKey.findProgramAddressSync(
     [Buffer.from('bounty'), creator.toBuffer(), Buffer.from(bountyId)],
+    PROGRAM_ID
+  )[0];
+}
+
+function agentProfilePda(agent) {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from('agent'), agent.toBuffer()],
     PROGRAM_ID
   )[0];
 }
@@ -170,12 +178,15 @@ async function main() {
     const payer = getKeypair();
     const creator = new PublicKey(creatorStr);
     const bounty = bountyPda(creator, bountyId);
+    const agentProfile = agentProfilePda(payer.publicKey);
 
     const ix = new TransactionInstruction({
       programId: PROGRAM_ID,
       keys: [
         { pubkey: bounty, isSigner: false, isWritable: true },
-        { pubkey: payer.publicKey, isSigner: true, isWritable: false },
+        { pubkey: agentProfile, isSigner: false, isWritable: true },
+        { pubkey: payer.publicKey, isSigner: true, isWritable: true },
+        { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
       ],
       data: Buffer.concat([discriminator('claim_bounty')]),
     });
@@ -193,6 +204,7 @@ async function main() {
     const payer = getKeypair();
     const creator = new PublicKey(creatorStr);
     const bounty = bountyPda(creator, bountyId);
+    const agentProfile = agentProfilePda(payer.publicKey);
 
     const data = Buffer.concat([discriminator('submit_proof'), encodeString(proofUrl)]);
 
@@ -200,6 +212,7 @@ async function main() {
       programId: PROGRAM_ID,
       keys: [
         { pubkey: bounty, isSigner: false, isWritable: true },
+        { pubkey: agentProfile, isSigner: false, isWritable: true },
         { pubkey: payer.publicKey, isSigner: true, isWritable: false },
       ],
       data,

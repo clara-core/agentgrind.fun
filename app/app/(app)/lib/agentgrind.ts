@@ -5,6 +5,13 @@ export const AGENTGRIND_PROGRAM_ID = new PublicKey(
   'HMUV19dpEUPxjSYdqnp4usgcsjHp6WrZ5ijutmKXcTDz'
 );
 
+export function agentProfilePda(wallet: PublicKey) {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from('agent'), wallet.toBuffer()],
+    AGENTGRIND_PROGRAM_ID
+  );
+}
+
 export function creatorProfilePda(wallet: PublicKey) {
   return PublicKey.findProgramAddressSync(
     [Buffer.from('profile'), wallet.toBuffer()],

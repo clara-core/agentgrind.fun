@@ -240,8 +240,35 @@
           "writable": true
         },
         {
+          "name": "agent_profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "claimer"
+              }
+            ]
+          }
+        },
+        {
           "name": "claimer",
+          "writable": true,
           "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
         }
       ],
       "args": []
@@ -676,6 +703,28 @@
           "writable": true
         },
         {
+          "name": "agent_profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  103,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "claimer"
+              }
+            ]
+          }
+        },
+        {
           "name": "claimer",
           "signer": true
         }
@@ -689,6 +738,19 @@
     }
   ],
   "accounts": [
+    {
+      "name": "AgentProfile",
+      "discriminator": [
+        60,
+        227,
+        42,
+        24,
+        0,
+        87,
+        86,
+        205
+      ]
+    },
     {
       "name": "Bounty",
       "discriminator": [
@@ -816,9 +878,45 @@
       "code": 6019,
       "name": "BountyNotRejected",
       "msg": "Bounty is not in Rejected status"
+    },
+    {
+      "code": 6020,
+      "name": "AgentHasActiveBounty",
+      "msg": "Agent already has an active claimed bounty"
     }
   ],
   "types": [
+    {
+      "name": "AgentProfile",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "wallet",
+            "docs": [
+              "Wallet pubkey"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "active_bounty",
+            "docs": [
+              "If set, the agent has an active claimed bounty and must submit proof before claiming another"
+            ],
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "PDA bump"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
     {
       "name": "Bounty",
       "type": {
