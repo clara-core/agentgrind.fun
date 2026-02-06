@@ -8,35 +8,41 @@ export async function POST(req: Request) {
     const body = raw ? JSON.parse(raw) : {};
     const keys = Array.isArray((body as any).keys) ? (body as any).keys : [];
 
-  // keys: [{creator,bounty_id}]
-  const creatorSet = new Set<string>();
-  const bountySet = new Set<string>();
-  for (const k of keys) {
-    if (!k) continue;
-    const c = String(k.creator || '');
-    const b = String(k.bounty_id || '');
-    if (!c || !b) continue;
-    creatorSet.add(c);
-    bountySet.add(b);
-  }
+    if (keys.length === 0) {
+      return NextResponse.json({ ok: true, items: [] });
+    }
 
-  if (creatorSet.size === 0 || bountySet.size === 0) {
-    return NextResponse.json({ ok: true, items: [] });
-  }
+    // Build efficient SQL query using (creator, bounty_id) pairs
+    // Use ANY with composite type for PostgreSQL
+    const pairs = keys
+      .map((k: any) => {
+        const c = String(k.creator || '').trim();
+        const b = String(k.bounty_id || '').trim();
+        return c && b ? { creator: c, bounty_id: b } : null;
+      })
+      .filter(Boolean);
 
-  const wanted = new Set(keys.map((k: any) => `${String(k.creator)}:${String(k.bounty_id)}`));
+    if (pairs.length === 0) {
+      return NextResponse.json({ ok: true, items: [] });
+    }
 
-  // Simplicity first: fetch recent metadata and filter in-memory.
-  // (Devnet scale is small; we can tighten query later.)
+    // Build WHERE clause with OR conditions for each pair
+    // This is more efficient than fetching 500 rows and filtering in memory
+    const conditions = pairs
+      .map((p, i) => `(creator = $${i * 2 + 1} AND bounty_id = $${i * 2 + 2})`)
+      .join(' OR ');
+
+    const values = pairs.flatMap((p: any) => [p.creator, p.bounty_id]);
+
     const { rows } = await query(
-      `select creator, bounty_id, title, description
-       from bounty_metadata
-       order by created_at desc
-       limit 500;`
+      `SELECT creator, bounty_id, title, description
+       FROM bounty_metadata
+       WHERE ${conditions}
+       ORDER BY created_at DESC`,
+      values
     );
 
-    const filtered = rows.filter((r: any) => wanted.has(`${r.creator}:${r.bounty_id}`));
-    return NextResponse.json({ ok: true, items: filtered });
+    return NextResponse.json({ ok: true, items: rows });
   } catch (e: any) {
     return NextResponse.json(
       { ok: false, error: 'db_error', message: e?.message || String(e), items: [] },

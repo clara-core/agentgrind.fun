@@ -1,12 +1,13 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { PublicKey, SystemProgram } from '@solana/web3.js';
 import {
   createAssociatedTokenAccountInstruction,
   createTransferInstruction,
   getAssociatedTokenAddress,
+  getAccount,
   TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import * as anchor from '@coral-xyz/anchor';
@@ -27,11 +28,38 @@ export default function CreateBounty() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [sig, setSig] = useState('');
+  const [usdcBalance, setUsdcBalance] = useState<number | null>(null);
+  const [balanceLoading, setBalanceLoading] = useState(false);
 
   // internal id (PDA seed); user shouldn't choose
   const bountyId = useMemo(() => `b_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
     []
   );
+
+  // Fetch USDC balance when wallet connects
+  useEffect(() => {
+    if (!wallet.publicKey) {
+      setUsdcBalance(null);
+      return;
+    }
+
+    const fetchBalance = async () => {
+      setBalanceLoading(true);
+      try {
+        const ata = await getAssociatedTokenAddress(USDC_MINT_DEVNET, wallet.publicKey!);
+        const accountInfo = await getAccount(connection, ata);
+        const balance = Number(accountInfo.amount) / 1_000_000;
+        setUsdcBalance(balance);
+      } catch (err) {
+        // ATA doesn't exist or other error → balance is 0
+        setUsdcBalance(0);
+      } finally {
+        setBalanceLoading(false);
+      }
+    };
+
+    fetchBalance();
+  }, [wallet.publicKey, connection]);
 
   const program = useMemo(() => {
     if (!wallet.publicKey) return null;
@@ -72,6 +100,11 @@ export default function CreateBounty() {
       const grossAtoms = Math.floor(Number(amount) * 1_000_000);
       if (!Number.isFinite(grossAtoms) || grossAtoms <= 0) throw new Error('Invalid amount');
 
+      // Check balance before attempting transaction
+      if (usdcBalance !== null && Number(amount) > usdcBalance) {
+        throw new Error(`Insufficient USDC balance. You have ${usdcBalance.toFixed(2)} USDC, need ${Number(amount).toFixed(2)} USDC.`);
+      }
+
       const feeAtoms = Math.floor(grossAtoms * 0.1);
       const netAtoms = grossAtoms - feeAtoms;
       if (netAtoms <= 0) throw new Error('Amount too small after fee');
@@ -86,6 +119,14 @@ export default function CreateBounty() {
       );
 
       const creatorTokenAccount = await getAssociatedTokenAddress(mint, creator);
+      
+      // Check if creator has USDC token account
+      try {
+        await getAccount(connection, creatorTokenAccount);
+      } catch (ataErr) {
+        throw new Error('You need a USDC token account. Get some devnet USDC first: https://faucet.solana.com');
+      }
+
       const treasuryTokenAccount = await getAssociatedTokenAddress(mint, treasury);
 
       const ix: anchor.web3.TransactionInstruction[] = [];
@@ -165,7 +206,17 @@ export default function CreateBounty() {
 
       setSig(txSig);
     } catch (err: any) {
-      const msg = err?.message || 'Failed to create bounty';
+      // Provide better error messages
+      let msg = err?.message || 'Failed to create bounty';
+      
+      if (msg.includes('User rejected')) {
+        msg = 'Transaction cancelled.';
+      } else if (msg.includes('Attempt to debit an account but found no record of a prior credit')) {
+        msg = 'Insufficient USDC balance or token account not found.';
+      } else if (msg.includes('0x1')) {
+        msg = 'Insufficient funds for transaction fee (need ~0.01 SOL).';
+      }
+      
       setError(msg);
     } finally {
       setSubmitting(false);
@@ -220,6 +271,22 @@ export default function CreateBounty() {
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-brand-textMuted font-mono">USDC</span>
             </div>
+            {wallet.publicKey && (
+              <p className="text-xs text-brand-textMuted mt-1.5">
+                {balanceLoading ? (
+                  'Loading balance…'
+                ) : usdcBalance !== null ? (
+                  <>
+                    Balance: <span className="font-mono">{usdcBalance.toFixed(2)}</span> USDC
+                    {Number(amount) > 0 && Number(amount) > usdcBalance && (
+                      <span className="text-red-400 ml-2">⚠️ Insufficient balance</span>
+                    )}
+                  </>
+                ) : (
+                  'Balance: --'
+                )}
+              </p>
+            )}
           </div>
 
           <div>
