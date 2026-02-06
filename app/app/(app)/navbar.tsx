@@ -17,14 +17,19 @@ export function Navbar() {
         <a href="/create" className="text-sm text-brand-textMuted hover:text-brand-green transition-colors">Create</a>
         <a href="/profile" className="text-sm text-brand-textMuted hover:text-brand-green transition-colors">Profile</a>
 
-        <button
-          type="button"
-          onClick={toggle}
-          className={`text-xs px-3 py-2 rounded-lg border transition-colors ${on ? 'border-brand-green text-brand-green' : 'border-brand-border text-brand-textMuted hover:text-brand-text'}`}
-          title="Toggle agent demo actions in UI"
-        >
-          Agent demo: {on ? 'ON' : 'OFF'}
-        </button>
+        <div className="flex items-center gap-2" title="Toggle agent demo actions in UI">
+          <span className="text-xs text-brand-textMuted">Agent demo</span>
+          <button
+            type="button"
+            onClick={toggle}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full border transition-colors ${on ? 'bg-brand-green/20 border-brand-green' : 'bg-transparent border-brand-border'}`}
+            aria-pressed={on}
+          >
+            <span
+              className={`inline-block h-5 w-5 transform rounded-full transition-transform ${on ? 'translate-x-5 bg-brand-green' : 'translate-x-1 bg-brand-textMuted'}`}
+            />
+          </button>
+        </div>
 
         <div className="[&_.wallet-adapter-button]:!h-9 [&_.wallet-adapter-button]:!rounded-lg [&_.wallet-adapter-button]:!bg-transparent [&_.wallet-adapter-button]:!border [&_.wallet-adapter-button]:!border-brand-border [&_.wallet-adapter-button]:hover:!border-brand-green [&_.wallet-adapter-button]:!text-brand-text [&_.wallet-adapter-button]:!text-sm">
           <WalletMultiButton />

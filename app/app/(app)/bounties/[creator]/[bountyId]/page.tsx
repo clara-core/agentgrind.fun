@@ -6,7 +6,8 @@ import { PublicKey } from '@solana/web3.js';
 import * as anchor from '@coral-xyz/anchor';
 
 import idl from '../../../idl/agentgrind.json';
-import { AGENTGRIND_PROGRAM_ID, bountyPda, decodeBounty, type Bounty } from '../../../lib/agentgrind';
+import { bountyPda, decodeBounty, type Bounty } from '../../../lib/agentgrind';
+import { useDemoAgentMode } from '../../../lib/demo-mode';
 
 const short = (s: string, n = 4) => `${s.slice(0, n)}…${s.slice(-n)}`;
 
@@ -19,7 +20,7 @@ export default function BountyDetails(props: any) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [claiming, setClaiming] = useState(false);
-  const [agentDemo, setAgentDemo] = useState(false);
+  const { on: agentDemo } = useDemoAgentMode();
 
   const creatorPk = useMemo(() => {
     try { return new PublicKey(params.creator); } catch { return null; }
@@ -30,17 +31,6 @@ export default function BountyDetails(props: any) {
     const provider = new anchor.AnchorProvider(connection, wallet as any, { commitment: 'confirmed' });
     return new anchor.Program(idl as any, provider);
   }, [connection, wallet]);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setAgentDemo(window.localStorage.getItem('ag_demo_agent_mode') === '1');
-      const onStorage = (e: StorageEvent) => {
-        if (e.key === 'ag_demo_agent_mode') setAgentDemo(e.newValue === '1');
-      };
-      window.addEventListener('storage', onStorage);
-      return () => window.removeEventListener('storage', onStorage);
-    }
-  }, []);
 
   useEffect(() => {
     let cancelled = false;

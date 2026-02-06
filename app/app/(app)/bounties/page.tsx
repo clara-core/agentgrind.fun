@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
+import { useDemoAgentMode } from '../lib/demo-mode';
 import { BOUNTY_ACCOUNT_SIZE, decodeBounty, type Bounty } from '../lib/agentgrind';
 import { PublicKey } from '@solana/web3.js';
 import * as anchor from '@coral-xyz/anchor';
@@ -92,7 +93,7 @@ function BountyCard({ bounty, onClaim, agentDemo }: { bounty: (Bounty & { addres
 export default function BountiesPage() {
   const { connection } = useConnection();
   const wallet = useWallet();
-  const [agentDemo, setAgentDemo] = useState(false);
+  const { on: agentDemo } = useDemoAgentMode();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [bounties, setBounties] = useState<any[]>([]);
@@ -104,17 +105,6 @@ export default function BountiesPage() {
     const provider = new anchor.AnchorProvider(connection, wallet as any, { commitment: 'confirmed' });
     return new anchor.Program(idl as any, provider);
   }, [connection, wallet]);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setAgentDemo(window.localStorage.getItem('ag_demo_agent_mode') === '1');
-      const onStorage = (e: StorageEvent) => {
-        if (e.key === 'ag_demo_agent_mode') setAgentDemo(e.newValue === '1');
-      };
-      window.addEventListener('storage', onStorage);
-      return () => window.removeEventListener('storage', onStorage);
-    }
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
