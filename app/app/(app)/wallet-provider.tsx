@@ -25,12 +25,30 @@ function WalletStickyConnect() {
     });
   }, [wallet?.adapter?.name, wallet, connected, connecting, connect]);
 
-  // Track explicit connect/disconnect via the connected boolean.
+  // Persist "connected" intent, but ONLY clear it on an actual adapter disconnect.
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (connected) window.localStorage.setItem(STICKY_KEY, '1');
-    else window.localStorage.removeItem(STICKY_KEY);
   }, [connected]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const adapter = wallet?.adapter as any;
+    if (!adapter?.on) return;
+
+    const onDisconnect = () => {
+      window.localStorage.removeItem(STICKY_KEY);
+    };
+
+    adapter.on('disconnect', onDisconnect);
+    return () => {
+      try {
+        adapter.off?.('disconnect', onDisconnect);
+      } catch {
+        // ignore
+      }
+    };
+  }, [wallet]);
 
   return null;
 }
