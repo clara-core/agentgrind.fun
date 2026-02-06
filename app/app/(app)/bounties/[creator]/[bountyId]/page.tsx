@@ -6,8 +6,9 @@ import { PublicKey, SystemProgram } from '@solana/web3.js';
 import * as anchor from '@coral-xyz/anchor';
 
 import idl from '../../../idl/agentgrind.json';
-import { agentProfilePda, bountyPda, decodeBounty, type Bounty } from '../../../lib/agentgrind';
+import { agentProfilePda, bountyPda, creatorProfilePda, decodeBounty, type Bounty, vaultPda } from '../../../lib/agentgrind';
 import { useDemoAgentMode } from '../../../lib/demo-mode';
+import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 const short = (s: string, n = 4) => `${s.slice(0, n)}…${s.slice(-n)}`;
 
@@ -20,6 +21,12 @@ export default function BountyDetails(props: any) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [claiming, setClaiming] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [proofUrl, setProofUrl] = useState('');
+  const [rejecting, setRejecting] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [approving, setApproving] = useState(false);
+  const [finalizing, setFinalizing] = useState(false);
   const { on: agentDemo } = useDemoAgentMode();
 
   const creatorPk = useMemo(() => {
@@ -134,6 +141,148 @@ export default function BountyDetails(props: any) {
     }
   };
 
+  const submitProof = async () => {
+    setError('');
+    if (!wallet.publicKey || !program || !bounty) {
+      setError('Connect wallet first.');
+      return;
+    }
+    if (!proofUrl.trim()) {
+      setError('Provide a proof URL.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const [agentProfile] = agentProfilePda(wallet.publicKey);
+      await program.methods
+        .submitProof(proofUrl.trim())
+        .accounts({
+          bounty: new PublicKey(bounty.address),
+          agentProfile,
+          claimer: wallet.publicKey,
+        })
+        .rpc();
+
+      const info = await connection.getAccountInfo(new PublicKey(bounty.address));
+      if (info?.data) setBounty((prev) => (prev ? ({ ...prev, ...decodeBounty(info.data) }) as any : prev));
+    } catch (e: any) {
+      setError(e?.message || 'Submit proof failed');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const approveAndPay = async () => {
+    setError('');
+    if (!wallet.publicKey || !program || !bounty) {
+      setError('Connect wallet first.');
+      return;
+    }
+
+    setApproving(true);
+    try {
+      const bountyPk = new PublicKey(bounty.address);
+      const [vault] = vaultPda(bountyPk);
+      const [profile] = creatorProfilePda(wallet.publicKey);
+
+      const mint = new PublicKey(bounty.mint);
+      const claimer = new PublicKey(bounty.claimer!);
+      const claimerTokenAccount = await getAssociatedTokenAddress(mint, claimer, true);
+
+      await program.methods
+        .approveAndPay()
+        .accounts({
+          bounty: bountyPk,
+          vault,
+          profile,
+          claimerTokenAccount,
+          creator: wallet.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .rpc();
+
+      const info = await connection.getAccountInfo(bountyPk);
+      if (info?.data) setBounty((prev) => (prev ? ({ ...prev, ...decodeBounty(info.data) }) as any : prev));
+    } catch (e: any) {
+      setError(e?.message || 'Approve failed');
+    } finally {
+      setApproving(false);
+    }
+  };
+
+  const rejectBounty = async () => {
+    setError('');
+    if (!wallet.publicKey || !program || !bounty) {
+      setError('Connect wallet first.');
+      return;
+    }
+    if (!rejectReason.trim()) {
+      setError('Provide a rejection reason.');
+      return;
+    }
+
+    setRejecting(true);
+    try {
+      const bountyPk = new PublicKey(bounty.address);
+      const [profile] = creatorProfilePda(wallet.publicKey);
+
+      await program.methods
+        .rejectBounty(rejectReason.trim())
+        .accounts({
+          bounty: bountyPk,
+          profile,
+          creator: wallet.publicKey,
+        })
+        .rpc();
+
+      const info = await connection.getAccountInfo(bountyPk);
+      if (info?.data) setBounty((prev) => (prev ? ({ ...prev, ...decodeBounty(info.data) }) as any : prev));
+    } catch (e: any) {
+      setError(e?.message || 'Reject failed');
+    } finally {
+      setRejecting(false);
+    }
+  };
+
+  const finalize = async () => {
+    setError('');
+    if (!wallet.publicKey || !program || !bounty) {
+      setError('Connect wallet first.');
+      return;
+    }
+
+    setFinalizing(true);
+    try {
+      const bountyPk = new PublicKey(bounty.address);
+      const [vault] = vaultPda(bountyPk);
+      const [creatorProfile] = creatorProfilePda(new PublicKey(bounty.creator));
+
+      const mint = new PublicKey(bounty.mint);
+      const claimer = new PublicKey(bounty.claimer!);
+      const claimerTokenAccount = await getAssociatedTokenAddress(mint, claimer, true);
+
+      await program.methods
+        .finalizeBounty()
+        .accounts({
+          bounty: bountyPk,
+          vault,
+          creatorProfile,
+          caller: wallet.publicKey,
+          claimerTokenAccount,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .rpc();
+
+      const info = await connection.getAccountInfo(bountyPk);
+      if (info?.data) setBounty((prev) => (prev ? ({ ...prev, ...decodeBounty(info.data) }) as any : prev));
+    } catch (e: any) {
+      setError(e?.message || 'Finalize failed');
+    } finally {
+      setFinalizing(false);
+    }
+  };
+
   if (loading) return <div className="card p-5 text-sm text-brand-textMuted">Loading bounty…</div>;
   if (error) return <div className="card p-5 text-sm text-red-400 break-words">{error}</div>;
   if (!bounty) return null;
@@ -195,6 +344,71 @@ export default function BountyDetails(props: any) {
           bounty: {bounty.address}
         </div>
       </div>
+
+      {/* Agent: submit proof */}
+      {agentDemo && bounty.status === 'Claimed' && bounty.claimer === wallet.publicKey?.toBase58() ? (
+        <div className="card mt-6">
+          <h2 className="text-sm font-semibold text-brand-text">Submit proof</h2>
+          <p className="text-xs text-brand-textMuted mt-1">
+            One claim at a time. Submitting proof unlocks you to claim another bounty.
+          </p>
+
+          <div className="mt-4 flex flex-col gap-3">
+            <input
+              className="input"
+              placeholder="https://... (IPFS/Arweave/GitHub/Docs etc.)"
+              value={proofUrl}
+              onChange={(e) => setProofUrl(e.target.value)}
+            />
+
+            <button className="btn-primary" disabled={submitting} onClick={submitProof}>
+              {submitting ? 'Submitting…' : 'Submit proof'}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Creator: approve / reject */}
+      {bounty.status === 'Submitted' && bounty.creator === wallet.publicKey?.toBase58() ? (
+        <div className="card mt-6">
+          <h2 className="text-sm font-semibold text-brand-text">Creator actions</h2>
+
+          <div className="mt-4 flex flex-col gap-3">
+            <button className="btn-primary" disabled={approving} onClick={approveAndPay}>
+              {approving ? 'Approving…' : 'Approve & pay'}
+            </button>
+
+            <div className="flex flex-col gap-2">
+              <input
+                className="input"
+                placeholder="Rejection reason (required)"
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+              />
+              <button className="btn-outline" disabled={rejecting} onClick={rejectBounty}>
+                {rejecting ? 'Rejecting…' : 'Reject (reopens bounty)'}
+              </button>
+            </div>
+          </div>
+
+          <p className="text-xs text-brand-textMuted mt-3">
+            Note: Approve/finalize requires the claimer to have a USDC associated token account.
+          </p>
+        </div>
+      ) : null}
+
+      {/* Anyone: finalize after review window */}
+      {bounty.status === 'Submitted' ? (
+        <div className="card mt-6">
+          <h2 className="text-sm font-semibold text-brand-text">Finalize</h2>
+          <p className="text-xs text-brand-textMuted mt-1">
+            After 48h from proof submission, anyone can finalize to pay the agent if the creator ghosts.
+          </p>
+          <button className="btn-outline mt-4" disabled={finalizing || !wallet.publicKey} onClick={finalize}>
+            {finalizing ? 'Finalizing…' : wallet.publicKey ? 'Finalize (if window elapsed)' : 'Connect wallet'}
+          </button>
+        </div>
+      ) : null}
 
       {error ? <p className="text-xs text-red-400 mt-3 break-words">{error}</p> : null}
     </div>
