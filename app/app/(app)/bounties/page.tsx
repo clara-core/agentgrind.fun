@@ -29,7 +29,7 @@ const formatDeadline = (ts: number) => {
 
 const short = (s: string, n = 4) => `${s.slice(0, n)}…${s.slice(-n)}`;
 
-function BountyCard({ bounty, onClaim }: { bounty: (Bounty & { address: string; title?: string; description?: string }); onClaim: (address: string) => Promise<void> }) {
+function BountyCard({ bounty, onClaim, agentDemo }: { bounty: (Bounty & { address: string; title?: string; description?: string }); onClaim: (address: string) => Promise<void>; agentDemo: boolean }) {
   return (
     <div className="card flex flex-col gap-3">
       <div className="flex items-start justify-between">
@@ -74,20 +74,15 @@ function BountyCard({ bounty, onClaim }: { bounty: (Bounty & { address: string; 
       </div>
 
       <div className="flex gap-2 pt-1">
-        {bounty.status === 'Open' && (
+        {bounty.status === 'Open' && agentDemo && (
           <button className="btn-primary text-sm w-full" onClick={() => onClaim(bounty.address)}>
             Claim
           </button>
         )}
-        {bounty.status === 'Claimed' && (
-          <button className="btn-outline text-sm w-full" disabled>
-            Submit Proof (next)
-          </button>
-        )}
-        {bounty.status === 'Submitted' && (
-          <button className="btn-outline text-sm w-full" disabled>
-            Review / Finalize (next)
-          </button>
+        {bounty.status === 'Open' && !agentDemo && (
+          <div className="text-xs text-brand-textMuted w-full text-center py-2 border border-brand-border rounded-lg">
+            Agent actions hidden (enable Agent demo)
+          </div>
         )}
       </div>
     </div>
@@ -97,6 +92,7 @@ function BountyCard({ bounty, onClaim }: { bounty: (Bounty & { address: string; 
 export default function BountiesPage() {
   const { connection } = useConnection();
   const wallet = useWallet();
+  const [agentDemo, setAgentDemo] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [bounties, setBounties] = useState<any[]>([]);
@@ -108,6 +104,17 @@ export default function BountiesPage() {
     const provider = new anchor.AnchorProvider(connection, wallet as any, { commitment: 'confirmed' });
     return new anchor.Program(idl as any, provider);
   }, [connection, wallet]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setAgentDemo(window.localStorage.getItem('ag_demo_agent_mode') === '1');
+      const onStorage = (e: StorageEvent) => {
+        if (e.key === 'ag_demo_agent_mode') setAgentDemo(e.newValue === '1');
+      };
+      window.addEventListener('storage', onStorage);
+      return () => window.removeEventListener('storage', onStorage);
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -199,6 +206,7 @@ export default function BountiesPage() {
             <BountyCard
               key={`${b.creator}-${b.bounty_id}-${b.deadline}`}
               bounty={b}
+              agentDemo={agentDemo}
               onClaim={async (address) => {
                 setError('');
                 if (!wallet.publicKey || !program) {
