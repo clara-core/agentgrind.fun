@@ -7,6 +7,9 @@ Usage:
   node agentgrind.mjs claim <creator> <bounty_id>
   node agentgrind.mjs submit-proof <creator> <bounty_id> <proof_url>
   node agentgrind.mjs abandon <creator> <bounty_id>
+  node agentgrind.mjs approve <creator> <bounty_id>
+  node agentgrind.mjs reject <creator> <bounty_id> <reason>
+  node agentgrind.mjs finalize <creator> <bounty_id>
 
 Env:
   SOLANA_KEYPAIR=/path/to/keypair.json (default: ~/.config/solana/id.json)
@@ -32,7 +35,7 @@ const PROGRAM_ID = new PublicKey('HMUV19dpEUPxjSYdqnp4usgcsjHp6WrZ5ijutmKXcTDz')
 const BOUNTY_ACCOUNT_SIZE = 719;
 
 function usage(code = 1) {
-  console.error(`\nAgentGrind CLI\n\nUsage:\n  node agentgrind.mjs list\n  node agentgrind.mjs status <creator> <bounty_id>\n  node agentgrind.mjs claim <creator> <bounty_id>\n  node agentgrind.mjs submit-proof <creator> <bounty_id> <proof_url>\n  node agentgrind.mjs abandon <creator> <bounty_id>\n\nEnv:\n  SOLANA_KEYPAIR=...\n  AG_RPC_URL=...\n`);
+  console.error(`\nAgentGrind CLI\n\nUsage:\n  node agentgrind.mjs list\n  node agentgrind.mjs status <creator> <bounty_id>\n  node agentgrind.mjs claim <creator> <bounty_id>\n  node agentgrind.mjs submit-proof <creator> <bounty_id> <proof_url>\n  node agentgrind.mjs abandon <creator> <bounty_id>\n  node agentgrind.mjs approve <creator> <bounty_id>\n  node agentgrind.mjs reject <creator> <bounty_id> <reason>\n  node agentgrind.mjs finalize <creator> <bounty_id>\n\nEnv:\n  SOLANA_KEYPAIR=...\n  AG_RPC_URL=...\n`);
   process.exit(code);
 }
 
@@ -68,6 +71,30 @@ function agentProfilePda(agent) {
   return PublicKey.findProgramAddressSync(
     [Buffer.from('agent'), agent.toBuffer()],
     PROGRAM_ID
+  )[0];
+}
+
+function creatorProfilePda(creator) {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from('profile'), creator.toBuffer()],
+    PROGRAM_ID
+  )[0];
+}
+
+function vaultPda(bounty) {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from('vault'), bounty.toBuffer()],
+    PROGRAM_ID
+  )[0];
+}
+
+const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
+const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
+
+function associatedTokenAddress(owner, mint) {
+  return PublicKey.findProgramAddressSync(
+    [owner.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), mint.toBuffer()],
+    ASSOCIATED_TOKEN_PROGRAM_ID
   )[0];
 }
 
@@ -242,6 +269,110 @@ async function main() {
         { pubkey: payer.publicKey, isSigner: true, isWritable: false },
       ],
       data: Buffer.concat([discriminator('abandon_claim')]),
+    });
+
+    const tx = new Transaction().add(ix);
+    const sig = await sendAndConfirmTransaction(connection, tx, [payer]);
+    console.log(JSON.stringify({ ok: true, signature: sig, bounty: bounty.toBase58() }, null, 2));
+    return;
+  }
+
+  if (cmd === 'approve') {
+    const [creatorStr, bountyId] = rest;
+    if (!creatorStr || !bountyId) usage();
+
+    const payer = getKeypair();
+    const creator = new PublicKey(creatorStr);
+    const bounty = bountyPda(creator, bountyId);
+
+    const info = await connection.getAccountInfo(bounty);
+    if (!info?.data) throw new Error('bounty_not_found');
+    const decoded = decodeBounty(info.data);
+    if (!decoded.claimer) throw new Error('bounty_missing_claimer');
+
+    const vault = vaultPda(bounty);
+    const profile = creatorProfilePda(payer.publicKey);
+    const mint = new PublicKey(decoded.mint);
+    const claimer = new PublicKey(decoded.claimer);
+    const claimerTokenAccount = associatedTokenAddress(claimer, mint);
+
+    const ix = new TransactionInstruction({
+      programId: PROGRAM_ID,
+      keys: [
+        { pubkey: bounty, isSigner: false, isWritable: true },
+        { pubkey: vault, isSigner: false, isWritable: true },
+        { pubkey: profile, isSigner: false, isWritable: true },
+        { pubkey: claimerTokenAccount, isSigner: false, isWritable: true },
+        { pubkey: payer.publicKey, isSigner: true, isWritable: false },
+        { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+      ],
+      data: Buffer.concat([discriminator('approve_and_pay')]),
+    });
+
+    const tx = new Transaction().add(ix);
+    const sig = await sendAndConfirmTransaction(connection, tx, [payer]);
+    console.log(JSON.stringify({ ok: true, signature: sig, bounty: bounty.toBase58() }, null, 2));
+    return;
+  }
+
+  if (cmd === 'reject') {
+    const [creatorStr, bountyId, ...reasonParts] = rest;
+    const reason = reasonParts.join(' ').trim();
+    if (!creatorStr || !bountyId || !reason) usage();
+
+    const payer = getKeypair();
+    const creator = new PublicKey(creatorStr);
+    const bounty = bountyPda(creator, bountyId);
+    const profile = creatorProfilePda(payer.publicKey);
+
+    const data = Buffer.concat([discriminator('reject_bounty'), encodeString(reason)]);
+
+    const ix = new TransactionInstruction({
+      programId: PROGRAM_ID,
+      keys: [
+        { pubkey: bounty, isSigner: false, isWritable: true },
+        { pubkey: profile, isSigner: false, isWritable: true },
+        { pubkey: payer.publicKey, isSigner: true, isWritable: false },
+      ],
+      data,
+    });
+
+    const tx = new Transaction().add(ix);
+    const sig = await sendAndConfirmTransaction(connection, tx, [payer]);
+    console.log(JSON.stringify({ ok: true, signature: sig, bounty: bounty.toBase58(), reason }, null, 2));
+    return;
+  }
+
+  if (cmd === 'finalize') {
+    const [creatorStr, bountyId] = rest;
+    if (!creatorStr || !bountyId) usage();
+
+    const payer = getKeypair();
+    const creator = new PublicKey(creatorStr);
+    const bounty = bountyPda(creator, bountyId);
+
+    const info = await connection.getAccountInfo(bounty);
+    if (!info?.data) throw new Error('bounty_not_found');
+    const decoded = decodeBounty(info.data);
+    if (!decoded.claimer) throw new Error('bounty_missing_claimer');
+
+    const vault = vaultPda(bounty);
+    const creatorProfile = creatorProfilePda(new PublicKey(decoded.creator));
+    const mint = new PublicKey(decoded.mint);
+    const claimer = new PublicKey(decoded.claimer);
+    const claimerTokenAccount = associatedTokenAddress(claimer, mint);
+
+    const ix = new TransactionInstruction({
+      programId: PROGRAM_ID,
+      keys: [
+        { pubkey: bounty, isSigner: false, isWritable: true },
+        { pubkey: vault, isSigner: false, isWritable: true },
+        { pubkey: creatorProfile, isSigner: false, isWritable: true },
+        { pubkey: payer.publicKey, isSigner: true, isWritable: true },
+        { pubkey: claimerTokenAccount, isSigner: false, isWritable: true },
+        { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+      ],
+      data: Buffer.concat([discriminator('finalize_bounty')]),
     });
 
     const tx = new Transaction().add(ix);
