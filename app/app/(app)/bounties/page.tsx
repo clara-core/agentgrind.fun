@@ -30,7 +30,7 @@ const formatDeadline = (ts: number) => {
 
 const short = (s: string, n = 4) => `${s.slice(0, n)}…${s.slice(-n)}`;
 
-function BountyCard({ bounty, onClaim, agentDemo }: { bounty: (Bounty & { address: string; title?: string; description?: string }); onClaim: (address: string) => Promise<void>; agentDemo: boolean }) {
+function BountyCard({ bounty, onClaim, agentDemo, canSubmitProof }: { bounty: (Bounty & { address: string; title?: string; description?: string }); onClaim: (address: string) => Promise<void>; agentDemo: boolean; canSubmitProof: boolean }) {
   return (
     <div className="card flex flex-col gap-3">
       <div className="flex items-start justify-between">
@@ -80,6 +80,19 @@ function BountyCard({ bounty, onClaim, agentDemo }: { bounty: (Bounty & { addres
             Claim
           </button>
         )}
+
+        {bounty.status === 'Claimed' && agentDemo && canSubmitProof && (
+          <a className="btn-outline text-sm w-full text-center" href={`/bounties/${bounty.creator}/${bounty.bounty_id}`}>
+            Submit proof
+          </a>
+        )}
+
+        {bounty.status === 'Claimed' && agentDemo && !canSubmitProof && (
+          <div className="text-xs text-brand-textMuted w-full text-center py-2 border border-brand-border rounded-lg">
+            Claimed (only claimer can submit)
+          </div>
+        )}
+
         {bounty.status === 'Open' && !agentDemo && (
           <div className="text-xs text-brand-textMuted w-full text-center py-2 border border-brand-border rounded-lg">
             Agent actions hidden (enable Agent demo)
@@ -197,6 +210,7 @@ export default function BountiesPage() {
               key={`${b.creator}-${b.bounty_id}-${b.deadline}`}
               bounty={b}
               agentDemo={agentDemo}
+              canSubmitProof={!!wallet.publicKey && b.claimer === wallet.publicKey.toBase58()}
               onClaim={async (address) => {
                 setError('');
                 if (!wallet.publicKey || !program) {
