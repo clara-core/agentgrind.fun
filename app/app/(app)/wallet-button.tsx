@@ -18,15 +18,16 @@ export function WalletButton() {
   const restoring = !connected && stickyWanted;
 
   return (
-    <div className="relative flex items-center">
+    <div className="flex items-center gap-2">
       <div className="[&_.wallet-adapter-button]:!h-9 [&_.wallet-adapter-button]:!rounded-lg [&_.wallet-adapter-button]:!bg-transparent [&_.wallet-adapter-button]:!border [&_.wallet-adapter-button]:!border-brand-border [&_.wallet-adapter-button]:hover:!border-brand-green [&_.wallet-adapter-button]:!text-brand-text [&_.wallet-adapter-button]:!text-sm">
         <WalletMultiButton />
       </div>
 
       {(connecting || restoring) && (
-        <div className="absolute -left-7 top-1/2 -translate-y-1/2" title={restoring ? 'Restoring wallet connection…' : 'Connecting…'}>
-          <div className="h-4 w-4 rounded-full border-2 border-brand-border border-t-brand-green animate-spin" />
-        </div>
+        <div
+          className="h-2.5 w-2.5 rounded-full bg-brand-green/80 animate-pulse"
+          title={restoring ? 'Restoring wallet connection…' : 'Connecting…'}
+        />
       )}
     </div>
   );
