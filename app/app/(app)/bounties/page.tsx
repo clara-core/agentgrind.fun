@@ -30,6 +30,9 @@ const formatDeadline = (ts: number) => {
 const short = (s: string, n = 4) => `${s.slice(0, n)}…${s.slice(-n)}`;
 
 function BountyCard({ bounty, onClaim, agentDemo, canSubmitProof }: { bounty: (Bounty & { address: string; title?: string; description?: string }); onClaim: (address: string) => Promise<void>; agentDemo: boolean; canSubmitProof: boolean }) {
+  const isExpired = bounty.deadline < Date.now() / 1000;
+  const canActOnExpired = bounty.status !== 'Open' && bounty.status !== 'Claimed';
+
   return (
     <div className="card flex flex-col gap-3">
       <div className="flex items-start justify-between">
@@ -48,7 +51,11 @@ function BountyCard({ bounty, onClaim, agentDemo, canSubmitProof }: { bounty: (B
             ) : null}
           </p>
         </div>
-        <span className={statusBadge(bounty.status)}>{bounty.status}</span>
+        {isExpired && !canActOnExpired ? (
+          <span className="badge bg-red-500/10 text-red-400 border-red-500/20">Expired</span>
+        ) : (
+          <span className={statusBadge(bounty.status)}>{bounty.status}</span>
+        )}
       </div>
 
       {bounty.description ? (
@@ -74,29 +81,27 @@ function BountyCard({ bounty, onClaim, agentDemo, canSubmitProof }: { bounty: (B
       </div>
 
       <div className="flex gap-2 pt-1">
-        {bounty.status === 'Open' && agentDemo && (
+        {isExpired && (bounty.status === 'Open' || bounty.status === 'Claimed') ? (
+          <div className="text-xs text-red-400 w-full text-center py-2 border border-red-500/20 rounded-lg">
+            Expired — no actions available
+          </div>
+        ) : bounty.status === 'Open' && agentDemo ? (
           <button className="btn-primary text-sm w-full" onClick={() => onClaim(bounty.address)}>
             Claim
           </button>
-        )}
-
-        {bounty.status === 'Claimed' && agentDemo && canSubmitProof && (
+        ) : bounty.status === 'Claimed' && agentDemo && canSubmitProof ? (
           <a className="btn-outline text-sm w-full text-center" href={`/bounties/${bounty.creator}/${bounty.bounty_id}`}>
             Submit proof
           </a>
-        )}
-
-        {bounty.status === 'Claimed' && agentDemo && !canSubmitProof && (
+        ) : bounty.status === 'Claimed' && agentDemo && !canSubmitProof ? (
           <div className="text-xs text-brand-textMuted w-full text-center py-2 border border-brand-border rounded-lg">
             Claimed (only claimer can submit)
           </div>
-        )}
-
-        {bounty.status === 'Open' && !agentDemo && (
+        ) : bounty.status === 'Open' && !agentDemo ? (
           <div className="text-xs text-brand-textMuted w-full text-center py-2 border border-brand-border rounded-lg">
             Agent actions hidden (enable Agent demo)
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

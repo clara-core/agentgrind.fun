@@ -287,6 +287,9 @@ export default function BountyDetails(props: any) {
   if (error) return <div className="card p-5 text-sm text-red-400 break-words">{error}</div>;
   if (!bounty) return null;
 
+  const isExpired = bounty.deadline < Date.now() / 1000;
+  const canAct = !isExpired && (bounty.status === 'Open' || bounty.status === 'Claimed' || bounty.status === 'Submitted');
+
   return (
     <div className="max-w-3xl mx-auto">
       <div className="flex items-start justify-between gap-6">
@@ -299,12 +302,21 @@ export default function BountyDetails(props: any) {
                 {' · '}claimer <span className="font-mono">{short(bounty.claimer)}</span>
               </>
             ) : null}
-            {' · '}status <span className="text-brand-green font-semibold">{bounty.status}</span>
+            {' · '}status{' '}
+            {isExpired ? (
+              <span className="text-red-400 font-semibold">Expired</span>
+            ) : (
+              <span className="text-brand-green font-semibold">{bounty.status}</span>
+            )}
           </p>
         </div>
 
         <div className="flex flex-col items-end gap-2">
-          {bounty.status === 'Open' && agentDemo ? (
+          {isExpired && bounty.status === 'Open' ? (
+            <div className="text-xs text-red-400 text-right">
+              Bounty expired
+            </div>
+          ) : bounty.status === 'Open' && agentDemo ? (
             <button className="btn-primary" disabled={!wallet.publicKey || claiming} onClick={claim}>
               {claiming ? 'Claiming…' : wallet.publicKey ? 'Claim bounty' : 'Connect wallet'}
             </button>
@@ -314,7 +326,7 @@ export default function BountyDetails(props: any) {
             </div>
           ) : null}
 
-          {agentDemo && bounty.status === 'Claimed' && bounty.claimer === wallet.publicKey?.toBase58() ? (
+          {agentDemo && bounty.status === 'Claimed' && bounty.claimer === wallet.publicKey?.toBase58() && canAct ? (
             <button className="btn-outline" onClick={abandon}>
               Abandon claim
             </button>
@@ -353,19 +365,23 @@ export default function BountyDetails(props: any) {
             One claim at a time. Submitting proof unlocks you to claim another bounty.
           </p>
 
-          <div className="mt-4 flex flex-col gap-3">
-            <input
-              type="url"
-              className="w-full bg-brand-bg border border-brand-border rounded-lg px-3 py-2.5 text-sm text-brand-text placeholder-brand-textMuted focus:outline-none focus:border-brand-green transition-colors"
-              placeholder="https://... (IPFS/Arweave/GitHub/Docs etc.)"
-              value={proofUrl}
-              onChange={(e) => setProofUrl(e.target.value)}
-            />
+          {isExpired ? (
+            <p className="text-xs text-red-400 mt-3">This bounty has expired and can no longer accept proof submissions.</p>
+          ) : (
+            <div className="mt-4 flex flex-col gap-3">
+              <input
+                type="url"
+                className="w-full bg-brand-bg border border-brand-border rounded-lg px-3 py-2.5 text-sm text-brand-text placeholder-brand-textMuted focus:outline-none focus:border-brand-green transition-colors"
+                placeholder="https://... (IPFS/Arweave/GitHub/Docs etc.)"
+                value={proofUrl}
+                onChange={(e) => setProofUrl(e.target.value)}
+              />
 
-            <button className="btn-primary" disabled={submitting} onClick={submitProof}>
-              {submitting ? 'Submitting…' : 'Submit proof'}
-            </button>
-          </div>
+              <button className="btn-primary" disabled={submitting} onClick={submitProof}>
+                {submitting ? 'Submitting…' : 'Submit proof'}
+              </button>
+            </div>
+          )}
         </div>
       ) : null}
 
@@ -394,7 +410,8 @@ export default function BountyDetails(props: any) {
           </div>
 
           <p className="text-xs text-brand-textMuted mt-3">
-            Note: Approve/finalize requires the claimer to have a USDC associated token account.
+            {isExpired ? 'Note: This bounty expired, but you can still review the submission. ' : ''}
+            Approve/finalize requires the claimer to have a USDC associated token account.
           </p>
         </div>
       ) : null}
