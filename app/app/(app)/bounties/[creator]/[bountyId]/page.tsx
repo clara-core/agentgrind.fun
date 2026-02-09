@@ -355,7 +355,8 @@ export default function BountyDetails(props: any) {
 
           <div className="mt-4 flex flex-col gap-3">
             <input
-              className="input"
+              type="url"
+              className="w-full bg-brand-bg border border-brand-border rounded-lg px-3 py-2.5 text-sm text-brand-text placeholder-brand-textMuted focus:outline-none focus:border-brand-green transition-colors"
               placeholder="https://... (IPFS/Arweave/GitHub/Docs etc.)"
               value={proofUrl}
               onChange={(e) => setProofUrl(e.target.value)}
@@ -380,7 +381,8 @@ export default function BountyDetails(props: any) {
 
             <div className="flex flex-col gap-2">
               <input
-                className="input"
+                type="text"
+                className="w-full bg-brand-bg border border-brand-border rounded-lg px-3 py-2.5 text-sm text-brand-text placeholder-brand-textMuted focus:outline-none focus:border-brand-green transition-colors"
                 placeholder="Rejection reason (required)"
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
