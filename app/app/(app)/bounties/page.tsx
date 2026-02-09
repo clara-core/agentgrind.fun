@@ -59,7 +59,7 @@ function BountyCard({ bounty, onClaim, agentDemo, canSubmitProof }: { bounty: (B
       </div>
 
       {bounty.description ? (
-        <p className="text-sm text-brand-textMuted leading-relaxed">{bounty.description}</p>
+        <p className="text-sm text-brand-textMuted leading-relaxed break-words">{bounty.description}</p>
       ) : bounty.proof_uri ? (
         <p className="text-xs text-brand-textMuted break-all">
           proof:{' '}

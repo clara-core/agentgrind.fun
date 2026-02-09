@@ -335,7 +335,7 @@ export default function BountyDetails(props: any) {
       </div>
 
       <div className="card mt-6">
-        <p className="text-sm text-brand-textMuted leading-relaxed">
+        <p className="text-sm text-brand-textMuted leading-relaxed break-words">
           {bounty.description || 'No description yet.'}
         </p>
 
