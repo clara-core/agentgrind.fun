@@ -316,23 +316,45 @@ export default function CreateBounty() {
 
         {error && <p className="text-sm text-red-400 break-words">{error}</p>}
 
-        {sig && (
-          <div className="bg-brand-card border border-brand-border rounded-lg px-4 py-3">
-            <p className="text-xs text-brand-textMuted">Transaction</p>
-            <a
-              className="text-sm text-brand-green hover:underline font-mono break-all"
-              href={`https://solscan.io/tx/${sig}?cluster=devnet`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {sig}
-            </a>
-          </div>
-        )}
+        {sig ? (
+          <>
+            <div className="bg-brand-card border border-brand-border rounded-lg px-4 py-3">
+              <p className="text-xs text-brand-textMuted">Transaction</p>
+              <a
+                className="text-sm text-brand-green hover:underline font-mono break-all"
+                href={`https://solscan.io/tx/${sig}?cluster=devnet`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {sig}
+              </a>
+            </div>
 
-        <button type="submit" disabled={submitting || !wallet.publicKey} className="btn-primary text-sm">
-          {submitting ? 'Creating…' : wallet.publicKey ? 'Create Bounty' : 'Connect Wallet'}
-        </button>
+            <div className="flex gap-3">
+              <a href={`/bounties/${wallet.publicKey?.toBase58()}/${bountyId}`} className="btn-primary text-sm flex-1 text-center">
+                View bounty
+              </a>
+              <button
+                type="button"
+                onClick={() => {
+                  setSig('');
+                  setError('');
+                  setTitle('');
+                  setDescription('');
+                  setAmount('10');
+                  setDeadlineDays('3');
+                }}
+                className="btn-outline text-sm flex-1"
+              >
+                Create another
+              </button>
+            </div>
+          </>
+        ) : (
+          <button type="submit" disabled={submitting || !wallet.publicKey} className="btn-primary text-sm">
+            {submitting ? 'Creating…' : wallet.publicKey ? 'Create Bounty' : 'Connect Wallet'}
+          </button>
+        )}
       </form>
     </div>
   );
