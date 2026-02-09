@@ -20,7 +20,11 @@ const statusBadge = (status: string) => {
   return map[status] || 'badge';
 };
 
-const formatDeadline = (ts: number) => {
+const formatDeadline = (ts: number, status: string) => {
+  // For final states, don't show deadline
+  if (status === 'Completed' || status === 'Cancelled' || status === 'Rejected') {
+    return null;
+  }
   const hoursLeft = (ts - Date.now() / 1000) / 3600;
   if (hoursLeft < 0) return 'expired';
   if (hoursLeft < 24) return `${Math.floor(hoursLeft)}h left`;
@@ -32,9 +36,10 @@ const short = (s: string, n = 4) => `${s.slice(0, n)}…${s.slice(-n)}`;
 function BountyCard({ bounty, onClaim, agentDemo, canSubmitProof }: { bounty: (Bounty & { address: string; title?: string; description?: string }); onClaim: (address: string) => Promise<void>; agentDemo: boolean; canSubmitProof: boolean }) {
   const isExpired = bounty.deadline < Date.now() / 1000;
   const canActOnExpired = bounty.status !== 'Open' && bounty.status !== 'Claimed';
+  const deadlineText = formatDeadline(bounty.deadline, bounty.status);
 
   return (
-    <div className="card flex flex-col gap-3">
+    <div className="card flex flex-col gap-3 h-full">
       <div className="flex items-start justify-between">
         <div>
           <h3 className="text-base font-semibold text-brand-text">
@@ -58,26 +63,28 @@ function BountyCard({ bounty, onClaim, agentDemo, canSubmitProof }: { bounty: (B
         )}
       </div>
 
-      {bounty.description ? (
-        <p className="text-sm text-brand-textMuted leading-relaxed break-words">{bounty.description}</p>
-      ) : bounty.proof_uri ? (
-        <p className="text-xs text-brand-textMuted break-all">
-          proof:{' '}
-          <a className="text-brand-green hover:underline" href={bounty.proof_uri} target="_blank" rel="noreferrer">
-            {bounty.proof_uri}
-          </a>
-        </p>
-      ) : (
-        <p className="text-sm text-brand-textMuted leading-relaxed">
-          No off-chain metadata found for this bounty yet.
-        </p>
-      )}
+      <div className="flex-1">
+        {bounty.description ? (
+          <p className="text-sm text-brand-textMuted leading-relaxed break-words">{bounty.description}</p>
+        ) : bounty.proof_uri ? (
+          <p className="text-xs text-brand-textMuted break-all">
+            proof:{' '}
+            <a className="text-brand-green hover:underline" href={bounty.proof_uri} target="_blank" rel="noreferrer">
+              {bounty.proof_uri}
+            </a>
+          </p>
+        ) : (
+          <p className="text-sm text-brand-textMuted leading-relaxed">
+            No off-chain metadata found for this bounty yet.
+          </p>
+        )}
+      </div>
 
-      <div className="flex items-center justify-between pt-2 border-t border-brand-border">
+      <div className="flex items-center justify-between pt-2 border-t border-brand-border mt-auto">
         <span className="font-mono text-sm font-semibold text-brand-green">
           ${(bounty.amount / 1_000_000).toFixed(2)} USDC
         </span>
-        <span className="text-xs text-brand-textMuted">{formatDeadline(bounty.deadline)}</span>
+        {deadlineText && <span className="text-xs text-brand-textMuted">{deadlineText}</span>}
       </div>
 
       <div className="flex gap-2 pt-1">
@@ -289,7 +296,7 @@ export default function BountiesPage() {
           </button>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
           {filteredBounties.map((b: any) => (
             <BountyCard
               key={`${b.creator}-${b.bounty_id}-${b.deadline}`}
