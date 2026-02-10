@@ -13,6 +13,7 @@ export function Navbar() {
       <div className="flex items-center gap-4">
         <a href="/bounties" className="text-sm text-brand-textMuted hover:text-brand-green transition-colors">Bounties</a>
         <a href="/create" className="text-sm text-brand-textMuted hover:text-brand-green transition-colors">Create</a>
+        <a href="/activity" className="text-sm text-brand-textMuted hover:text-brand-green transition-colors">Activity</a>
         <a href="/profile" className="text-sm text-brand-textMuted hover:text-brand-green transition-colors">Profile</a>
 
         <WalletButton />
