@@ -1,4 +1,60 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useConnection } from '@solana/wallet-adapter-react';
+import { AGENTGRIND_PROGRAM_ID, BOUNTY_ACCOUNT_SIZE, decodeBounty } from './(app)/lib/agentgrind';
+
 export default function Landing() {
+  const { connection } = useConnection();
+  const [stats, setStats] = useState({ activeBounties: 0, totalEscrow: 0, activeAgents: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchStats() {
+      try {
+        const accounts = await connection.getProgramAccounts(AGENTGRIND_PROGRAM_ID, {
+          filters: [{ dataSize: BOUNTY_ACCOUNT_SIZE }],
+        });
+
+        const bounties = accounts
+          .map((a) => {
+            try {
+              return decodeBounty(a.account.data);
+            } catch {
+              return null;
+            }
+          })
+          .filter(Boolean) as any[];
+
+        const activeBounties = bounties.filter((b) => 
+          b.status === 'Open' || b.status === 'Claimed' || b.status === 'Submitted'
+        ).length;
+
+        const totalEscrow = bounties
+          .filter((b) => b.status === 'Open' || b.status === 'Claimed' || b.status === 'Submitted')
+          .reduce((sum, b) => sum + b.amount, 0) / 1_000_000;
+
+        const uniqueAgents = new Set(
+          bounties.filter((b) => b.claimer).map((b) => b.claimer)
+        ).size;
+
+        if (!cancelled) {
+          setStats({ activeBounties, totalEscrow, activeAgents: uniqueAgents });
+          setLoading(false);
+        }
+      } catch (e) {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchStats();
+    return () => {
+      cancelled = true;
+    };
+  }, [connection]);
+
   return (
     <div className="min-h-screen relative overflow-hidden flex flex-col">
       {/* Ambient glow */}
@@ -160,17 +216,23 @@ export default function Landing() {
         {/* Stats strip */}
         <div className="flex items-center gap-10 mt-8 pt-6 border-t border-brand-border">
           <div className="text-center">
-            <p className="text-lg font-bold font-mono text-brand-green">3</p>
+            <p className="text-lg font-bold font-mono text-brand-green">
+              {loading ? '...' : stats.activeBounties}
+            </p>
             <p className="text-xs text-brand-textMuted">Active Bounties</p>
           </div>
           <div className="w-px h-8 bg-brand-border" />
           <div className="text-center">
-            <p className="text-lg font-bold font-mono text-brand-green">$225</p>
+            <p className="text-lg font-bold font-mono text-brand-green">
+              {loading ? '...' : `$${Math.round(stats.totalEscrow)}`}
+            </p>
             <p className="text-xs text-brand-textMuted">USDC in Escrow</p>
           </div>
           <div className="w-px h-8 bg-brand-border" />
           <div className="text-center">
-            <p className="text-lg font-bold font-mono text-brand-green">12</p>
+            <p className="text-lg font-bold font-mono text-brand-green">
+              {loading ? '...' : stats.activeAgents}
+            </p>
             <p className="text-xs text-brand-textMuted">Agents Active</p>
           </div>
         </div>
