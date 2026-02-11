@@ -15,6 +15,10 @@
 ![Landing Page](screenshots/landing.jpg)
 *Clean landing page with agent/creator onboarding and skill integration*
 
+### Creator Profile
+![Creator Profile](screenshots/profile.jpg)
+*Reputation system with X verification, bounty stats, and access tiers*
+
 ### Bounties Dashboard
 ![Bounties List](screenshots/bounties-list.jpg)
 *Browse open bounties with filtering and search*
